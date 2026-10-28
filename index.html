@@ -261,6 +261,7 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/parse/dist/parse.min.js"></script>
 <script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
@@ -1338,12 +1339,15 @@ function endGame(win,title,sub,joke){
   Music.stop();if(win)SFX.win();else SFX.lose();setTimeout(()=>Music.start(),2500);
 }
 
-/* ============ PUNTOS + RANKING MUNDIAL (Upstash Redis) ============ */
-// ⚠️ El token es público por diseño: el juego es 100% estático (GitHub Pages) y el
-// navegador lo necesita para leer/escribir. La base SOLO guarda puntuaciones.
-// Si alguien la spamea, se regenera el token en Upstash y se actualiza aquí.
-const LB_URL='https://moral-buck-242215.upstash.io';
-const LB_TOKEN='gQAAAAAAA7InAAIgcDJkNDZjNzI3NmNkNjE0NWY4ODI1ZTYwNmFlMTczYjEwMw';
+/* ============ PUNTOS + RANKING MUNDIAL (Back4App Parse) ============ */
+// Las claves van incrustadas POR DISEÑO: son públicas (solo permiten leer el top
+// y crear marcas). La seguridad real está en el servidor: CLP (sin update ni
+// delete) + cloudcode.js (validación de valores) en Back4App.
+const PARSE_APP_ID='j464wW90ihE6JO0iJtHsefPoULj3HRVqNkwblZ8U';
+const PARSE_JS_KEY='VIwzYjCsql9Kt38APcT5RUoy49YQkgwLdXs3pJFE';
+const PARSE_URL='https://parseapi.back4app.com/';
+let parseReady=false;
+function parseInit(){if(parseReady)return true;if(!window.Parse)return false;window.Parse.initialize(PARSE_APP_ID,PARSE_JS_KEY);window.Parse.serverURL=PARSE_URL;parseReady=true;return true;}
 function cleanRankName(v){return String(v||'Anónimo').replace(/[<>{}\/\\]/g,'').trim().slice(0,16)||'Anónimo';}
 function escapeHtml(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function calcScore(kind){ // kind: 'epic' | 'win' | null
@@ -1354,29 +1358,25 @@ function calcScore(kind){ // kind: 'epic' | 'win' | null
   const mult=(1+S.nAlumnos/30)*(1+S.durationMin/50);
   return {base:Math.round(pts),mult:mult,total:Math.min(99999,Math.round(pts*mult))};
 }
-async function lbPipe(cmds){
-  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),9000);
-  try{const r=await fetch(LB_URL+'/pipeline',{method:'POST',headers:{Authorization:'Bearer '+LB_TOKEN,'Content-Type':'application/json'},body:JSON.stringify(cmds),signal:ctl.signal});
-  if(!r.ok)throw new Error('lb '+r.status);return await r.json();}
-  finally{clearTimeout(to);}
-}
 async function lbSubmit(e){
-  const id=Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36);
-  await lbPipe([['ZADD','cs1:lb:all',e.score,id],['ZADD','cs1:lb:'+e.dur,e.score,id],['HSET','cs1:run:'+id,'name',e.name,'score',String(e.score),'dur',String(e.dur),'alumnos',String(e.alumnos),'win',e.win?'1':'0','mins',e.mins.toFixed(1),'con',String(Math.round(e.con)),'combo',String(e.combo),'date',new Date().toISOString().slice(0,10)],['ZREMRANGEBYRANK','cs1:lb:all','0','-101'],['ZREMRANGEBYRANK','cs1:lb:'+e.dur,'0','-101']]);
+  if(!parseInit())throw new Error('no parse');
+  const Cls=window.Parse.Object.extend('Scores');
+  const o=new Cls();
+  o.set('name',e.name);o.set('score',e.score);o.set('dur',e.dur);o.set('alumnos',e.alumnos);
+  o.set('win',!!e.win);o.set('mins',Math.round(e.mins*10)/10);o.set('con',Math.round(e.con));
+  o.set('combo',e.combo);o.set('date',new Date().toISOString().slice(0,10));
+  await o.save();
   let rank=null;
-  try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),8000);
-  const r=await fetch(LB_URL+'/zrevrank/cs1:lb:'+e.dur+'/'+id,{method:'POST',headers:{Authorization:'Bearer '+LB_TOKEN},signal:ctl.signal});clearTimeout(to);
-  if(r.ok){const j=await r.json();rank=j.result;}}catch(_){}
-  return {rank,id};
+  try{const q=new window.Parse.Query('Scores');q.equalTo('dur',e.dur);q.greaterThan('score',e.score);rank=await q.count();}catch(_){}
+  return {rank,id:o.id};
 }
 async function lbTop(board){
-  const key='cs1:lb:'+(board==='all'?'all':board);
-  const z=await lbPipe([['ZREVRANGE',key,'0','9','WITHSCORES']]);
-  const arr=(z[0]&&z[0].result)||[];if(!arr.length)return [];
-  const gets=[];for(let i=0;i<arr.length;i+=2)gets.push(['HGETALL','cs1:run:'+arr[i]]);
-  const hs=await lbPipe(gets);const out=[];
-  for(let k=0;k<gets.length;k++){const a=(hs[k]&&hs[k].result)||[];const o={};for(let j=0;j<a.length;j+=2)o[a[j]]=a[j+1];o.score=arr[k*2+1];o.id=arr[k*2];if(o.name!=null)out.push(o);}
-  return out;
+  if(!parseInit())throw new Error('no parse');
+  const q=new window.Parse.Query('Scores');
+  if(board!=='all')q.equalTo('dur',parseInt(board,10));
+  q.descending('score');q.limit(10);
+  const res=await q.find();
+  return res.map(o=>({id:o.id,name:o.get('name'),score:o.get('score'),dur:o.get('dur'),alumnos:o.get('alumnos'),win:o.get('win')?'1':'0',mins:o.get('mins'),con:o.get('con'),combo:o.get('combo')}));
 }
 let rankPrevPaused=false;
 function renderBest(){try{const b=JSON.parse(localStorage.getItem('cs_best')||'null');document.getElementById('rank-best').innerHTML=b?`⭐ Tu mejor marca: <b>${Number(b.score).toLocaleString('es')} pts</b> (${b.dur}' · ${b.alumnos} alum · ${b.date})`:'⭐ Tu mejor marca: — (juega y entra en el ranking)';}catch(_){}}
