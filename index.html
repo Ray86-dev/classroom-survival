@@ -317,7 +317,7 @@ const hitMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:
 const pcHit=new THREE.Mesh(new THREE.BoxGeometry(2.8,2.0,1.8),hitMat);pcHit.position.set(-0.5,1.1,0);pcHit.userData.station='pc';tDesk.add(pcHit);
 const projHit=new THREE.Mesh(new THREE.BoxGeometry(1.8,1.4,1.4),hitMat);projHit.position.set(0,3.4,1);projHit.userData.station='proj';room.add(projHit);
 tDesk.add(box(0.3,0.35,0.4,0xffd23f,0.7,1.2,0.1)); // taza / papeles
-tDesk.position.set(-1.5,0,3.2); room.add(tDesk);
+tDesk.position.set(-5.2,0,-3.6); room.add(tDesk); // mesa en un costado, junto a la pizarra, mirando a la clase
 // Proyector colgando + cono
 room.add(box(0.1,1,0.1,0x333,0,4,1)); const proj=box(0.9,0.3,0.7,0x222831,0,3.4,1); proj.userData.station='proj'; room.add(proj); // proyector (ESTACIÓN CLICABLE 📽️)
 const cone=new THREE.Mesh(new THREE.ConeGeometry(1.4,3.5,24,1,true),new THREE.MeshBasicMaterial({color:0xbfe9ff,transparent:true,opacity:0.10,side:THREE.DoubleSide}));
@@ -340,7 +340,7 @@ let roll=null; // pasando lista: {queue,current,deadline,hits,total}
 function stationLabel(e,x,y,z){const s=emojiSprite(e);s.position.set(x,y,z);s.scale.set(0.7,0.7,1);scene.add(s);stationLabels.push({s,y,ph:Math.random()*6});}
 stationLabel('🖊️',-3.1,3.75,-5.1);
 stationLabel('📽️',0,4.15,1);
-stationLabel('💻',-1.5,2.15,3.2);
+stationLabel('💻',-5.2,2.1,-3.6);
 // Ventanas izquierda + cortinas que se mueven con la corriente
 const curtains=[];
 for(let i=0;i<3;i++){const w=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.8,1.8),new THREE.MeshStandardMaterial({color:0xbfe9ff,emissive:0x9fd8ff,emissiveIntensity:.7}));w.position.set(-6.85,2.6,-3+i*2.6);room.add(w);room.add(box(0.12,0.12,2,0xffffff,-6.85,3.55,-3+i*2.6));room.add(box(0.12,0.12,2,0xffffff,-6.85,1.65,-3+i*2.6));
@@ -409,7 +409,7 @@ const teacher=new THREE.Group();
   teacher.add(box(0.22,0.7,0.22,0x333,-0.18,0.35,0));
   teacher.add(box(0.22,0.7,0.22,0x333,0.18,0.35,0));
 })();
-teacher.position.set(0.5,0,2.4); scene.add(teacher);
+teacher.position.set(-5.2,0,-2.6); teacher.rotation.y=0; scene.add(teacher); // junto a su mesa, mirando a los alumnos (+z)
 let teachBob=0;
 
 /* --- Marcadores: anillo en suelo + 3 ICONOS 3D sobre la cabeza ---
@@ -1054,7 +1054,7 @@ function writeOnBoard(){
     S.est=clamp(S.est+1+disrupt*0.8,0,100);
     teachBob=1;toast(`🖊️ Explicas en la pizarra (+${gain.toFixed(1)}%) · tizas: ${S.chalkLeft}`);
     updateBars();checkEnd();
-    setTimeout(()=>{if(S.playing&&!S.exiting&&!teacher.userData.walk)walkCharTo(teacher,0.5,2.4,1.6);},1400);
+    setTimeout(()=>{if(S.playing&&!S.exiting&&!teacher.userData.walk)walkCharTo(teacher,-5.2,-2.6,1.6);},1400);
   });
   updateBars();
 }
@@ -1273,7 +1273,7 @@ document.getElementById('start-btn').onclick=()=>{
   S.con=0;S.est=15;S.ans=10;S.sal=100;S.totalEvents=0;S.resolved=0;S.clicks=0;S.lessons=0;S.elapsed=0;
   S.eventCD=3;S.activeEvents=[];S.playing=true;S.paused=false;S.warned=false;S.exiting=false;S.exitT=0;S._bell2=false;S._epicDone=false;modalStack=[];evtId=0;wrap.innerHTML='';wrap.classList.remove('show');
   S.combo=0;S.comboT=0;S.bestCombo=0;S.coffeeCD=0;S.coffeeT=0;S.shoutCD=0;S.silenceT=0;S.reboundT=0;S.deleCD=20;S.deleTrust=0;S.warn75={est:false,ans:false,sal:false};S.slowmoT=0;S.focusT=0;S.focusP=null;
-  S.boardCD=0;S.chalkLeft=6;S.pcCD=0;S.writeT=0;S.slideT=7;projOn=false;wifiDown=false;roll=null;slideI=0;lessonI=0;teacher.userData.walk=null;teacher.position.set(0.5,0,2.4);drawBoard(LESSONS[0],'¡SILENCIO! Examen viernes');drawSlideCur();
+  S.boardCD=0;S.chalkLeft=6;S.pcCD=0;S.writeT=0;S.slideT=7;projOn=false;wifiDown=false;roll=null;slideI=0;lessonI=0;teacher.userData.walk=null;teacher.position.set(-5.2,0,-2.6);teacher.rotation.y=0;drawBoard(LESSONS[0],'¡SILENCIO! Examen viernes');drawSlideCur();
   floorDebris.forEach(d=>scene.remove(d.mesh));floorDebris.length=0;
   confetti.forEach(c=>scene.remove(c.mesh));confetti.length=0;
   refreshChaosBadge();
@@ -1366,7 +1366,7 @@ function loop(){
   teachBob=Math.max(0,teachBob-dt*2);
   const tw=teacher.userData.walk;
   if(tw&&!S.exiting){tw.t+=dt;const ta=Math.min(1,tw.t/tw.dur);teacher.position.x=tw.fx+(tw.tx-tw.fx)*ta;teacher.position.z=tw.fz+(tw.tz-tw.fz)*ta;teacher.rotation.y=Math.atan2(tw.tx-tw.fx,tw.tz-tw.fz);if(ta>=1){const tcb=tw.cb;teacher.userData.walk=null;if(tcb)tcb();}}
-  else if(!S.exiting){teacher.position.x=0.5+Math.sin(t*0.4)*1.2;teacher.rotation.y=(S.writeT>0)?Math.PI:Math.sin(t*0.6)*0.25;}
+  else if(!S.exiting){teacher.position.x=-5.2+Math.sin(t*0.4)*0.6;teacher.rotation.y=(S.writeT>0)?Math.PI:Math.sin(t*0.6)*0.25;}
   teacher.position.y=Math.abs(Math.sin(t*2))*0.03+teachBob*0.15+(tw?Math.abs(Math.sin(t*10))*0.05:0);
   if(projOn&&projLight.intensity<8)projLight.intensity=8;
   cone.material.opacity=(projOn?0.16:0.06)+Math.sin(t*7)*0.015+(projLight.intensity>10?0.15:0);
