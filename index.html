@@ -290,7 +290,15 @@ const wallC=0xe8e4da;
 const backW=box(14,4.5,0.3,wallC,0,2.25,-5.5); room.add(backW);
 const frontW=box(14,4.5,0.3,wallC,0,2.25,5.5); room.add(frontW);
 const leftW=box(0.3,4.5,11,0xdcd6c8,-7,2.25,0); room.add(leftW);
-const rightW=box(0.3,4.5,11,wallC,7,2.25,0); room.add(rightW);
+// Muro derecho CON HUECO para la puerta (z 3.0..4.6)
+room.add(box(0.3,4.5,8.5,wallC,7,2.25,-1.25)); // hasta la puerta
+room.add(box(0.3,4.5,0.9,wallC,7,2.25,5.05)); // tras la puerta
+room.add(box(0.34,1.5,1.8,wallC,7,3.75,3.8)); // dintel sobre la puerta
+room.add(box(0.36,3.0,0.12,0x8a6b3d,7,1.5,3.04)); room.add(box(0.36,3.0,0.12,0x8a6b3d,7,1.5,4.56)); // marco
+// Pasillo oscuro tras el hueco (se ve pasillo, no pared)
+{const hallBack=new THREE.Mesh(new THREE.PlaneGeometry(2.4,3.2),new THREE.MeshBasicMaterial({color:0x0b0d18}));hallBack.position.set(9.6,1.6,3.8);hallBack.rotation.y=-Math.PI/2;room.add(hallBack);
+room.add(box(2.8,0.1,2.2,0x4a4238,8.4,-0.05,3.8));
+const hallLamp=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.3),new THREE.MeshBasicMaterial({color:0xffe9a8}));hallLamp.position.set(9.55,2.9,3.8);hallLamp.rotation.y=-Math.PI/2;room.add(hallLamp);}
 const ceil=box(14,0.2,11,0xf3f0e8,0,4.5,0); room.add(ceil);
 // Vista diorama: sin techo ni pared frontal para ver TODA la clase de un vistazo
 frontW.visible=false; ceil.visible=false;
@@ -346,10 +354,13 @@ const curtains=[];
 for(let i=0;i<3;i++){const w=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.8,1.8),new THREE.MeshStandardMaterial({color:0xbfe9ff,emissive:0x9fd8ff,emissiveIntensity:.7}));w.position.set(-6.85,2.6,-3+i*2.6);room.add(w);room.add(box(0.12,0.12,2,0xffffff,-6.85,3.55,-3+i*2.6));room.add(box(0.12,0.12,2,0xffffff,-6.85,1.65,-3+i*2.6));
   const cz=-3+i*2.6;
   [-1.05,1.05].forEach(off=>{const cu=new THREE.Mesh(new THREE.PlaneGeometry(0.5,2.1),new THREE.MeshStandardMaterial({color:0xff6fb5,side:THREE.DoubleSide}));cu.position.set(-6.6,2.6,cz+off);cu.rotation.y=Math.PI/2;cu.userData.baseZ=cz+off;cu.userData.ph=Math.random()*6;room.add(cu);curtains.push(cu);});}
-// Puerta derecha (batiente que se abre cuando llaman)
-const doorMesh=box(0.15,3,1.4,0x9a6b3f,6.9,1.5,3.8);room.add(doorMesh);let doorOpenT=0;
+// Puerta derecha con bisagra real (gira sobre el marco del hueco)
+const doorPivot=new THREE.Group();doorPivot.position.set(6.9,0,3.08);room.add(doorPivot);
+const doorMesh=box(0.12,2.95,1.44,0x9a6b3f,0,1.5,0.72);doorPivot.add(doorMesh);
+doorPivot.add(box(0.06,0.7,0.7,0x5d3f24,0,1.6,0.72)); // panel
+let doorOpenT=0;
 // Papelera
-const bin=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.28,0.6,12),new THREE.MeshStandardMaterial({color:0x3a3f5c}));bin.position.set(5.8,0.3,3.6);bin.castShadow=true;room.add(bin);
+const bin=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.28,0.6,12),new THREE.MeshStandardMaterial({color:0x3a3f5c}));bin.position.set(-6.3,0.3,-4.7);bin.castShadow=true;room.add(bin);
 // Reloj
 const clock=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.1,20),new THREE.MeshStandardMaterial({color:0xffffff}));clock.rotation.x=Math.PI/2;clock.position.set(-3,3.8,-5.3);room.add(clock);
 // Pósters
@@ -385,12 +396,12 @@ function makeKid(){
 }
 function makeDesk(){
   const g=new THREE.Group();
-  // Mesa DELANTE del alumno (lado pizarra, -z)
-  g.add(box(0.9,0.08,0.65,0xd9b382,0,0.62,-0.75));
-  g.add(box(0.85,0.5,0.55,0xb58e5a,0,0.3,-0.75));
+  // Mesa DELANTE del alumno (lado pizarra, -z) en verde colegio
+  g.add(box(0.9,0.08,0.65,0x2fa36b,0,0.62,-0.75)); // tablero verde
+  g.add(box(0.85,0.5,0.55,0x27855a,0,0.3,-0.75));
   // Silla DETRAS: asiento bajo el alumno y espaldar a su espalda (+z)
-  g.add(box(0.5,0.08,0.5,0x8a6b3d,0,0.45,0.1)); // asiento
-  g.add(box(0.5,0.55,0.08,0x8a6b3d,0,0.75,0.38)); // espaldar
+  g.add(box(0.5,0.08,0.5,0x2b8a5e,0,0.45,0.1)); // asiento
+  g.add(box(0.5,0.55,0.08,0x2b8a5e,0,0.75,0.38)); // espaldar
   return g;
 }
 
@@ -493,11 +504,17 @@ function spawnVisitor(emoji='🧑‍💼'){
   g.add(box(0.47,0.15,0.47,0x333333,0,1.72,0));
   const s=emojiSprite(emoji);s.position.set(0,2.2,0);g.add(s);
   g.position.set(6.4,0,3.8);g.rotation.y=-Math.PI/2;g.userData.bubble=s;
-  scene.add(g);visitor=g;visitorT=0;
+  scene.add(g);visitor=g;visitorT=0;fadeIn(g,0.6);
   // la puerta "se abre": el visitante da un paso dentro
   walkCharTo(g,5.4,3.4,1.6);
 }
 function despawnVisitor(){if(visitor){scene.remove(visitor);visitor=null;}}
+/* Fundidos al cruzar la puerta: nadie atraviesa madera, se desvanecen */
+const faders=[];
+function setOpacity(obj,v){obj.traverse(o=>{if(o.material){o.material.transparent=true;o.material.opacity=v;}});}
+function fadeOut(obj,dur,cb){if(!obj)return;setOpacity(obj,1);faders.push({obj,t:0,dur,cb});}
+function fadeIn(obj,dur){if(!obj)return;dur=dur||0.8;obj.visible=true;setOpacity(obj,0);faders.push({obj,t:0,dur,up:true});}
+function resetOpacity(obj){if(!obj)return;obj.visible=true;obj.traverse(o=>{if(o.material){o.material.opacity=1;o.material.transparent=false;}});}
 function walkCharTo(ch,tx,tz,dur=1.6,cb=null){ch.userData.walk={fx:ch.position.x,fz:ch.position.z,tx,tz,dur,t:0,cb};}
 // Balon que entra por la ventana izquierda con parabola real
 const flyBalls=[];
@@ -940,9 +957,9 @@ function resolveEventById(id,opt){
   if(m0==='bath'&&/^\s*✅|^\s*✔/u.test(opt.l||'')||m0==='bath'&&/S[ií],? ve/i.test(opt.l||'')){
     // Permiso concedido: va al baño (sale por la puerta) y vuelve en 8s
     log(`🚽 ${mk0.userData.name} sale corriendo al baño...`,'#3ff2c4');
-    walkKidTo(mk0,6.0,3.8,2.2,()=>{mk0.visible=false;setTimeout(()=>{if(S.playing){mk0.visible=true;kidBackToSeat(mk0,3);}},6000);});
+    walkKidTo(mk0,6.0,3.8,2.2,()=>{fadeOut(mk0,0.8,()=>{mk0.visible=false;setTimeout(()=>{if(S.playing){mk0.visible=true;fadeIn(mk0,0.8);kidBackToSeat(mk0,3);}},6000);});});
   } else if(m0==='door'||m0==='ball'){
-    if(visitor){const v=visitor;walkCharTo(v,6.4,3.8,1.4,()=>despawnVisitor());}
+    if(visitor){const v=visitor;walkCharTo(v,6.4,3.8,1.4,()=>fadeOut(v,0.8,despawnVisitor));}
     doorOpenT=Math.max(doorOpenT,1.5);
     kidBackToSeat(mk0,2.5);
   } else if(m0==='walk'||m0==='stand'||m0==='bath'){
@@ -960,7 +977,7 @@ function timeoutEventById(id,silent){
   const p=item.chaosP||0;
   log(`⏰ ¡${item.ev.t} sin atender! El caos se expande (+${Math.round(7+p*9)} estrés)`,'#ff4d6d');SFX.timeout();
   applyFx({est:7+p*9,ans:5+p*8,sal:-(3+p*6),con:-2});
-  if(item.ev.mood==='door'&&visitor){const v=visitor;walkCharTo(v,6.4,3.8,1.4,()=>despawnVisitor());doorOpenT=Math.max(doorOpenT,1.5);}
+  if(item.ev.mood==='door'&&visitor){const v=visitor;walkCharTo(v,6.4,3.8,1.4,()=>fadeOut(v,0.8,despawnVisitor));doorOpenT=Math.max(doorOpenT,1.5);}
   if(item.ev.mood==='bath'||item.ev.mood==='walk'||item.ev.mood==='ball')kidBackToSeat(item.kid,3);
   if(item.ev.mood==='wifi'){wifiDown=false;drawSlideCur();log('📶 El TIC lo arregla en remoto. Has perdido 10 minutos de vídeo.','#ff8fa3');}
   clearBubble(item.kid);item.kid.userData.mood='alerta-tardia';item.kid.userData.standT=4;item.kid.userData.bubbleT=4;
@@ -1273,7 +1290,7 @@ document.getElementById('start-btn').onclick=()=>{
   S.con=0;S.est=15;S.ans=10;S.sal=100;S.totalEvents=0;S.resolved=0;S.clicks=0;S.lessons=0;S.elapsed=0;
   S.eventCD=3;S.activeEvents=[];S.playing=true;S.paused=false;S.warned=false;S.exiting=false;S.exitT=0;S._bell2=false;S._epicDone=false;modalStack=[];evtId=0;wrap.innerHTML='';wrap.classList.remove('show');
   S.combo=0;S.comboT=0;S.bestCombo=0;S.coffeeCD=0;S.coffeeT=0;S.shoutCD=0;S.silenceT=0;S.reboundT=0;S.deleCD=20;S.deleTrust=0;S.warn75={est:false,ans:false,sal:false};S.slowmoT=0;S.focusT=0;S.focusP=null;
-  S.boardCD=0;S.chalkLeft=6;S.pcCD=0;S.writeT=0;S.slideT=7;projOn=false;wifiDown=false;roll=null;slideI=0;lessonI=0;teacher.userData.walk=null;teacher.position.set(-5.2,0,-2.6);teacher.rotation.y=0;drawBoard(LESSONS[0],'¡SILENCIO! Examen viernes');drawSlideCur();
+  S.boardCD=0;S.chalkLeft=6;S.pcCD=0;S.writeT=0;S.slideT=7;projOn=false;wifiDown=false;roll=null;slideI=0;lessonI=0;teacher.userData.walk=null;teacher.position.set(-5.2,0,-2.6);teacher.rotation.y=0;faders.length=0;kids.forEach(resetOpacity);resetOpacity(teacher);S._epicFade=false;drawBoard(LESSONS[0],'¡SILENCIO! Examen viernes');drawSlideCur();
   floorDebris.forEach(d=>scene.remove(d.mesh));floorDebris.length=0;
   confetti.forEach(c=>scene.remove(c.mesh));confetti.length=0;
   refreshChaosBadge();
@@ -1336,9 +1353,9 @@ function loop(){
       const b=Math.sin(t*5+mk.phase)*0.06;mk.head.sA.position.y=b;mk.head.sB.position.y=-b;}});
   stationLabels.forEach(o=>{o.s.position.y=o.y+Math.sin(t*2.5+o.ph)*0.12;});
   // puerta: se abre (gira) mientras hay visitante
-  if(typeof doorMesh!=='undefined'){
+  if(typeof doorPivot!=='undefined'){
     const target=(visitor||doorOpenT>0)?-1.1:0;
-    doorMesh.rotation.y+=(target-doorMesh.rotation.y)*Math.min(1,dt*4);
+    doorPivot.rotation.y+=(target-doorPivot.rotation.y)*Math.min(1,dt*4);
     if(doorOpenT>0)doorOpenT-=dt;
   }
   // visitante camina dentro y gesticula
@@ -1353,6 +1370,7 @@ function loop(){
     b.mesh.rotation.x+=dt*9;b.mesh.rotation.z+=dt*5;
     if(a>=1){dropFloorPaper(b.mesh.position);log('⚽ ¡El balón bota en clase! Alguien tendrá que devolverlo...','#ffd23f');scene.remove(b.mesh);flyBalls.splice(i,1);}}
   // cortinas ondeando + rafagas de viento visible
+  for(let i=faders.length-1;i>=0;i--){const f=faders[i];f.t+=dt;const fa=Math.min(1,f.t/f.dur);setOpacity(f.obj,f.up?fa:1-fa);if(fa>=1){if(f.up)f.obj.traverse(o=>{if(o.material)o.material.transparent=false;});faders.splice(i,1);const fcb=f.cb;if(fcb)fcb();}}
   const sway=windowOpenT>0?0.35:0.08;
   curtains.forEach(c=>{c.userData.ph+=dt*(windowOpenT>0?7:1.6);c.rotation.x=Math.sin(c.userData.ph)*sway;c.position.x=-6.6+Math.sin(c.userData.ph*0.7)*sway*0.6;});
   if(windowOpenT>0)windowOpenT-=dt;
@@ -1379,6 +1397,7 @@ function loop(){
     teacher.rotation.y=Math.PI/2+Math.sin(t*8)*0.05;
     teacher.position.y=Math.abs(Math.sin(t*10))*0.08;
     if(S.exitT>1&&!S._bell2){S._bell2=true;SFX.schoolBell();}
+    if(S.exitT>3.4&&!S._epicFade){S._epicFade=true;fadeOut(teacher,1.0);}
     if(k>=1&&!S._epicDone){S._epicDone=true;
       endGame(true,'🏆 ¡CLUB DEL 1%! SALES POR LA PUERTA','Sonó la alarma tras 50 minutos infernales. Sales por la puerta entre aplausos (y un vómito sin limpiar). Conocimiento '+Math.round(S.con)+'%.','El cuñao, viendo esto: “...bueno, hoy sí habéis trabajado”. Solo el 1% lo logra. Eres leyenda del claustro.');
     }
