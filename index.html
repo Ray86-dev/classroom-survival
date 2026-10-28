@@ -68,6 +68,13 @@
   #event-desc{font-size:11px;line-height:1.35;max-height:52px;overflow:hidden;text-overflow:ellipsis}
   /* Screens */
   #help-screen{z-index:60}
+  /* Manual compacto: cabe en pantalla, el texto rueda dentro y el botón siempre visible */
+  #help-screen .panel{width:min(640px,94vw);max-height:92vh;display:flex;flex-direction:column}
+  #help-screen .panel-hero{padding:16px 20px}
+  #help-screen .panel-hero h1{font-size:clamp(16px,3vw,22px)}
+  #help-screen .panel-body{overflow-y:auto;min-height:0;gap:10px;padding:14px 16px}
+  #help-screen .satire{font-size:13px;padding:10px}
+  #help-screen #help-close{position:sticky;bottom:0;z-index:2}
   .screen{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,#2a2e68 0%,#0e0f1a 65%);padding:18px;overflow:auto}
   .panel{width:min(760px,96vw);background:#171932;border:3px solid #fff;border-radius:24px;box-shadow:0 0 0 8px #262a5a,0 30px 80px rgba(0,0,0,.6);overflow:hidden}
   .panel-hero{padding:22px 24px;background:linear-gradient(90deg,#ffd23f,#ff7a3f);color:#1a1a2e}
