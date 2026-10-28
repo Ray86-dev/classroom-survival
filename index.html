@@ -26,18 +26,24 @@
   #day-label{font-size:11px;opacity:.7}
   /* side log */
   #log{position:fixed;left:12px;bottom:96px;width:300px;max-height:38vh;overflow:hidden;display:flex;flex-direction:column-reverse;gap:6px;z-index:9;pointer-events:none}
+  /* Columna izquierda: historial arriba, crisis decidibles abajo (nunca se tapan) */
+  #left-dock{position:fixed;left:12px;bottom:12px;width:300px;max-width:44vw;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;z-index:9;pointer-events:none;max-height:64vh}
+  #left-dock #event-wrap{position:static;max-width:none;width:100%;display:none;flex-direction:column;gap:6px;z-index:30;pointer-events:none;padding:0;background:none}
+  #left-dock #event-wrap.show{display:flex}
+  #left-dock #event-card,#left-dock #event-card.stacked{width:100%;max-width:100%}
+  #left-dock #log{position:static;left:auto;bottom:auto;width:100%;max-height:26vh;overflow:hidden;display:flex;flex-direction:column-reverse;gap:6px;pointer-events:none}
   .log-item{background:rgba(15,17,32,.9);border-left:4px solid var(--accent2);border-radius:10px;padding:8px 10px;font-size:13px;animation:pop .35s ease}
   @keyframes pop{from{transform:translateY(10px) scale(.96);opacity:0}}
   /* actions */
-  #actions{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:10}
-  .btn{font-family:Rubik;font-weight:800;border:none;border-radius:14px;padding:14px 18px;font-size:15px;cursor:pointer;transition:.15s;box-shadow:0 6px 0 rgba(0,0,0,.4)}
+  #actions{position:fixed;bottom:10px;left:316px;right:262px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;z-index:10}
+  .btn{font-family:Rubik;font-weight:800;border:none;border-radius:14px;padding:10px 13px;font-size:13px;cursor:pointer;transition:.15s;box-shadow:0 6px 0 rgba(0,0,0,.4)}
   .btn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.4)}
   #btn-teach{background:var(--accent);color:#222}
   #btn-teach:disabled{filter:grayscale(1);opacity:.6;cursor:wait}
   #btn-breathe{background:#2a2e55;color:#fff;border:2px solid #3ff2c4}
   #btn-pause{background:#22243d;color:#fff;border:2px solid #444}
-  #hint{position:fixed;bottom:12px;right:12px;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:10px;font-size:12px;z-index:10}
-  #hint input[type=range]{width:110px;vertical-align:middle;accent-color:#ffd23f}
+  #hint{position:fixed;bottom:10px;right:12px;width:250px;background:rgba(0,0,0,.65);padding:8px 10px;border-radius:10px;font-size:11.5px;line-height:1.6;z-index:10}
+  #hint input[type=range]{width:88px;vertical-align:middle;accent-color:#ffd23f}
   #zoom-val{color:#ffd23f;font-weight:800}
   /* Event modal */
   /* Dock minimalista: las decisiones viven sobre la cabeza del alumno (3 iconos 3D).
@@ -69,7 +75,7 @@
   .panel-hero p{margin-top:8px;font-weight:600}
   .panel-body{padding:20px 22px;display:grid;gap:14px}
   .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media(max-width:600px){.row{grid-template-columns:1fr}#log{width:220px;bottom:120px}}
+  @media(max-width:600px){.row{grid-template-columns:1fr}}
   label{font-size:13px;font-weight:800;opacity:.9;display:block;margin-bottom:6px}
   input[type=text]{width:100%;padding:12px;border-radius:12px;border:2px solid #333664;background:#0f1126;color:#fff;font-size:15px}
   .seg{display:flex;gap:8px;flex-wrap:wrap}
@@ -91,10 +97,10 @@
   #btn-coffee:disabled,#btn-shout:disabled{filter:grayscale(1);opacity:.55;cursor:wait}
   #combo-badge{position:fixed;top:86px;right:12px;z-index:11;display:none;background:linear-gradient(180deg,#ffd23f,#ff7a00);color:#222;font-weight:800;border-radius:12px;padding:8px 14px;box-shadow:0 6px 20px rgba(0,0,0,.5);border:2px solid #fff}
   #combo-badge.show{display:block;animation:cardIn .25s ease}
-  #powers-bar{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10;font-size:12px;font-weight:800}
-  #powers-bar span{background:rgba(10,10,25,.85);border:1px solid #4448a0;padding:4px 10px;border-radius:99px;color:#dfe1ff}
+  #powers-bar{position:fixed;right:12px;bottom:104px;width:250px;display:flex;flex-direction:column;gap:6px;z-index:10;font-size:12px;font-weight:800}
+  #powers-bar span{background:rgba(10,10,25,.85);border:1px solid #4448a0;padding:4px 10px;border-radius:99px;color:#dfe1ff;text-align:center;display:block}
   .bar.crit{animation:blink .5s infinite alternate}
-  #actions{flex-wrap:wrap;justify-content:center;max-width:96vw}
+  #actions .btn{white-space:nowrap}
   #event-wrap .stack-note{font-family:'Press Start 2P';font-size:9px;color:#ff8fa3;text-shadow:0 2px 0 #000;background:rgba(0,0,0,.5);border-radius:8px;padding:5px 8px;pointer-events:none}
   #event-card.stacked + #event-card.stacked{transform:scale(.97)}
   .head-label{font-family:'Press Start 2P';font-size:8px;color:#fff;text-shadow:0 2px 0 #000;text-align:center;pointer-events:none}
@@ -106,6 +112,13 @@
   #end-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
   .stat{background:#0f1126;border-radius:12px;padding:12px;text-align:center}
   .stat b{font-size:22px;display:block}
+  /* Responsive: al final para que gane a las reglas base */
+  @media(max-width:980px){
+    #actions{left:8px;right:8px;bottom:8px}
+    #hint{bottom:auto;top:134px;right:8px;width:200px;font-size:11px}
+    #left-dock{left:8px;bottom:132px;width:250px;max-width:62vw;max-height:50vh}
+    #powers-bar{top:224px;right:8px;bottom:auto;width:200px;font-size:11px}
+  }
 </style>
 </head>
 <body>
@@ -126,6 +139,7 @@
 </div>
 
 <div id="toast"></div>
+<div id="left-dock">
 <div id="log"></div>
 
 <div id="combo-badge" class="pix">👁️ COMBO x2</div>
@@ -140,7 +154,7 @@
   <button class="btn on" id="btn-sound" title="Efectos de sonido">🔊</button>
   <button class="btn on" id="btn-music" title="Música de fondo">🎵</button>
 </div>
-<div id="hint">🖱️ Díscolo = mirada · 🖊️ pizarra = explicar · 📽️ proyector = diapos · 💻 portátil = pasar lista • Arrastra para mirar<br>🔍 Zoom: <input type="range" id="zoom" min="4" max="16" step="0.5" value="14"> <span id="zoom-val">x14.0</span> <span style="opacity:.7">(rueda o teclas +/−)</span></div>
+<div id="hint">🖱️ Díscolo = mirada · 🖊️📽️💻 = estaciones<br>🔍 Zoom: <input type="range" id="zoom" min="4" max="16" step="0.5" value="14"> <span id="zoom-val">x14.0</span></div>
 
 <div id="event-wrap">
   <div id="event-card">
@@ -149,6 +163,7 @@
     <div id="event-desc"></div>
     <div id="event-opts"></div>
   </div>
+</div>
 </div>
 
 <!-- HELP MODAL -->
@@ -291,10 +306,10 @@ let lessonI=0;
 const boardCv=document.createElement('canvas');boardCv.width=512;boardCv.height=128;
 const boardG=boardCv.getContext('2d');
 const boardTex=new THREE.CanvasTexture(boardCv);
-function drawBoard(l1,l2){boardG.clearRect(0,0,512,128);boardG.fillStyle='#fff';boardG.font='bold 40px monospace';boardG.textAlign='center';boardG.textBaseline='middle';boardG.fillText(String(l1).slice(0,26),256,42);boardG.font='bold 30px monospace';boardG.fillStyle='#ffe9a8';boardG.fillText(String(l2||'').slice(0,30),256,92);boardTex.needsUpdate=true;}
+function drawBoard(l1,l2){boardG.clearRect(0,0,512,128);boardG.fillStyle='#fff';boardG.font='bold 30px monospace';boardG.textAlign='center';boardG.textBaseline='middle';boardG.fillText(String(l1).slice(0,28),256,42);boardG.font='bold 24px monospace';boardG.fillStyle='#ffe9a8';boardG.fillText(String(l2||'').slice(0,32),256,92);boardTex.needsUpdate=true;}
 drawBoard(LESSONS[0],'¡SILENCIO! Examen viernes');
 const chalkTxt=new THREE.Sprite(new THREE.SpriteMaterial({map:boardTex,transparent:true}));
-chalkTxt.position.set(0,2.25,-5.2); chalkTxt.scale.set(6,1.1,1); room.add(chalkTxt);
+chalkTxt.position.set(-1.6,2.25,-5.2); chalkTxt.scale.set(3.6,1.1,1); room.add(chalkTxt); // solo mitad izquierda: la derecha la tapa la pantalla del proyector
 // Mesa profe
 const tDesk=new THREE.Group(); tDesk.add(box(2.4,0.12,1,0x7a5230,0,0.95,0)); tDesk.add(box(2.2,0.85,0.85,0x5d3f24,0,0.48,0));
 const laptopMesh=box(0.7,0.45,0.05,0x222831,-0.5,1.3,-0.1); laptopMesh.userData.station='pc'; tDesk.add(laptopMesh); // portátil (ESTACIÓN CLICABLE 💻: pasar lista)
