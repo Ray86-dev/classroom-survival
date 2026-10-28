@@ -57,6 +57,12 @@ npx serve .
 
 Y abre http://localhost:3000 (o cualquier servidor estático).
 
+## 🏆 Puntos y ranking mundial
+
+Al terminar cada partida recibes una **puntuación**: conocimiento ×10 + minutos ×20 + eventos resueltos ×15 − ignorados ×10 + mejor combo ×10 + miradas + lecciones ×5, con bonus por aprobar (+500) o entrar en el club del 1 % (+2000), todo multiplicado por la **dificultad** `(1 + alumnos/30) × (1 + duración/50)`.
+
+Tu marca se envía sola al **ranking mundial** (pestañas por duración: 5/10/15/25/50 min + general) y se guarda tu mejor marca local. Botón **🏆 RANKING** en la pantalla inicial y al final de cada partida.
+
 ## 🛠️ Tecnologías
 
 * Un solo `index.html` (~78 KB de JS), sin build ni dependencias instaladas.

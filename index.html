@@ -92,6 +92,17 @@
   #start-btn{background:var(--accent2);font-family:'Press Start 2P';font-size:15px;padding:18px;border-radius:14px;border:none;cursor:pointer;box-shadow:0 6px 0 #0a7a5e}
   #btn-controls{background:#2a2e55;color:#fff;font-family:'Press Start 2P';font-size:12px;line-height:1.6;padding:18px 10px;border-radius:14px;border:2px solid #3ff2c4;cursor:pointer;box-shadow:0 6px 0 #0a3a3a}
   #btn-controls:hover{filter:brightness(1.15)}
+  #btn-rank{background:#2a2e55;color:#fff;font-family:'Press Start 2P';font-size:12px;line-height:1.6;padding:18px 10px;border-radius:14px;border:2px solid #ffd23f;cursor:pointer;box-shadow:0 6px 0 #5a4a00}
+  #btn-rank:hover{filter:brightness(1.15)}
+  /* Ranking */
+  .rank-tabs{display:flex;gap:6px;flex-wrap:wrap}
+  .rank-tabs button{flex:1;min-width:56px;padding:10px 6px;border-radius:10px;border:2px solid #333664;background:#0f1126;color:#fff;font-weight:800;cursor:pointer;font-size:12px}
+  .rank-tabs button.sel{background:var(--accent2);color:#222;border-color:#fff}
+  #rank-list{display:grid;gap:6px;max-height:38vh;overflow-y:auto}
+  .rank-row{display:flex;gap:8px;align-items:center;background:#0f1126;border:1px solid #4448a0;border-radius:10px;padding:8px 10px;font-size:13px}
+  .rank-row.me{border-color:var(--accent);background:#2a2410}
+  .rank-pos{font-family:'Press Start 2P';font-size:12px;min-width:38px;color:var(--accent)}
+  #end-score{background:#0f1126;border:2px dashed var(--accent2);border-radius:12px;padding:12px;font-size:13.5px;line-height:1.6}
   .satire{background:#0f1126;border:2px dashed #4448a0;border-radius:12px;padding:12px;font-size:13.5px;line-height:1.5;color:#d6d8ff}
   .hidden{display:none!important}
   #toast{position:fixed;top:86px;left:50%;transform:translateX(-50%);z-index:40;background:#fff;color:#111;border-radius:99px;padding:8px 16px;font-weight:800;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
@@ -209,11 +220,27 @@
       <div><label>Duración de la partida (máx 50 min reales... ¿sobrevivirás?)</label><div class="seg" id="seg-time">
         <button data-v="5">5 min ⚡</button><button data-v="10" class="sel">10 min ☕</button><button data-v="15">15 min 📚</button><button data-v="25">25 min 🔥</button><button data-v="50">50 min 💀</button>
       </div></div>
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">
         <button id="start-btn">▶ EMPEZAR LA CLASE</button>
+        <button id="btn-rank">🏆<br>RANKING</button>
         <button id="btn-controls">🎮<br>CONTROLES</button>
       </div>
       <div style="font-size:12px;opacity:.6;text-align:center">Minimalista • Pixel-Art 3D en tiempo real • Three.js • Haz clic en alumnos para calmarlos • Espacio = dar clase</div>
+    </div>
+  </div>
+</div>
+
+<!-- RANKING MUNDIAL -->
+<div class="screen hidden" id="rank-screen">
+  <div class="panel">
+    <div class="panel-hero"><h1>🏆 RANKING MUNDIAL</h1><p>Los héroes y mártires del claustro. Pestañas por duración: la dificultad manda.</p></div>
+    <div class="panel-body">
+      <div class="satire" id="rank-best">⭐ Tu mejor marca: —</div>
+      <div class="rank-tabs" id="rank-tabs">
+        <button data-b="all" class="sel">🌍 Todo</button><button data-b="5">5'</button><button data-b="10">10'</button><button data-b="15">15'</button><button data-b="25">25'</button><button data-b="50">50' 💀</button>
+      </div>
+      <div id="rank-list"><div class="satire">Cargando...</div></div>
+      <button class="btn" id="rank-close" style="background:#ffd23f;padding:14px">✔ VOLVER</button>
     </div>
   </div>
 </div>
@@ -224,8 +251,12 @@
     <div class="panel-hero" id="end-hero"><h1 id="end-title">FIN</h1><p id="end-sub"></p></div>
     <div class="panel-body">
       <div id="end-stats"></div>
+      <div id="end-score"></div>
       <div class="satire" id="end-joke"></div>
-      <button id="start-btn2" class="btn" style="background:#ffd23f;padding:16px">🔁 REPETIR CURSO (reintentar)</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <button id="start-btn2" class="btn" style="background:#ffd23f;padding:16px">🔁 REPETIR CURSO</button>
+        <button id="btn-rank2" class="btn" style="background:#2a2e55;color:#fff;border:2px solid #ffd23f;padding:16px">🏆 RANKING</button>
+      </div>
     </div>
   </div>
 </div>
@@ -983,7 +1014,7 @@ function timeoutEventById(id,silent){
   const i=modalStack.findIndex(m=>m.id===id);if(i<0)return;
   const [item]=modalStack.splice(i,1);
   const p=item.chaosP||0;
-  log(`⏰ ¡${item.ev.t} sin atender! El caos se expande (+${Math.round(7+p*9)} estrés)`,'#ff4d6d');SFX.timeout();
+  log(`⏰ ¡${item.ev.t} sin atender! El caos se expande (+${Math.round(7+p*9)} estrés)`,'#ff4d6d');SFX.timeout();S.timeouts=(S.timeouts||0)+1;
   applyFx({est:7+p*9,ans:5+p*8,sal:-(3+p*6),con:-2});
   if(item.ev.mood==='door'&&visitor){const v=visitor;walkCharTo(v,6.4,3.8,1.4,()=>fadeOut(v,0.8,despawnVisitor));doorOpenT=Math.max(doorOpenT,1.5);}
   if(item.ev.mood==='bath'||item.ev.mood==='walk'||item.ev.mood==='ball')kidBackToSeat(item.kid,3);
@@ -1036,6 +1067,10 @@ document.getElementById('btn-coffee').onclick=drinkCoffee;
 document.getElementById('btn-shout').onclick=shoutThunder;
 let helpPrevPaused=false;
 function openHelp(){AudioSys.init();SFX.ui();helpPrevPaused=S.paused;S.paused=true;document.getElementById('btn-pause').textContent='▶️';document.getElementById('help-close').textContent=S.playing?'✔ VOLVER AL INFIERNO':'✔ ENTENDIDO, QUIERO SUFRIR';document.getElementById('help-screen').classList.remove('hidden');}
+document.getElementById('btn-rank').onclick=openRank;
+document.getElementById('btn-rank2').onclick=openRank;
+document.getElementById('rank-close').onclick=()=>{SFX.ui();document.getElementById('rank-screen').classList.add('hidden');if(S.playing)S.paused=rankPrevPaused;};
+document.querySelectorAll('#rank-tabs button').forEach(b=>b.onclick=()=>loadBoard(b.dataset.b));
 document.getElementById('btn-help').onclick=openHelp;
 document.getElementById('btn-controls').onclick=openHelp;
 document.getElementById('help-close').onclick=()=>{SFX.ui();document.getElementById('help-screen').classList.add('hidden');S.paused=helpPrevPaused;document.getElementById('btn-pause').textContent=S.paused?'▶️':'⏸️';};
@@ -1294,8 +1329,68 @@ function endGame(win,title,sub,joke){
     <div class="stat">✅<b>${S.resolved}</b>resueltos</div>
     <div class="stat">📖<b>${S.lessons}</b>lecciones</div>`;
   document.getElementById('end-joke').innerHTML=`📰 <b>Titular del día:</b> ${joke} <br><br>👁️ Miradas: ${S.clicks} • ⚡ Mejor combo x${S.bestCombo} • 🌟 Confianza delegada: ${S.deleTrust} • 🧠 Salud final: ${Math.round(S.sal)}% • ⏱️ ${S.nAlumnos} alumn@s • ${Math.round(S.elapsed/60)} min aguantados`;
+  const kind=/CLUB DEL 1%/.test(title)?'epic':(win?'win':null);
+  const sc=calcScore(kind);
+  document.getElementById('end-score').innerHTML=`🏆 <b>PUNTUACIÓN: ${sc.total.toLocaleString('es')} pts</b> (base ${sc.base.toLocaleString('es')} × dificultad ${sc.mult.toFixed(2)})<br><span style="opacity:.8">📚 ${Math.round(S.con)} con. · ⏱️ ${(S.elapsed/60).toFixed(1)} min · ✅ ${S.resolved} resueltos · ⏰ ${S.timeouts||0} ignorados · ⚡ combo x${S.bestCombo}</span><br><span style="opacity:.7" id="rank-status">📡 Enviando al ranking mundial...</span>`;
+  try{const prev=JSON.parse(localStorage.getItem('cs_best')||'null');if(!prev||sc.total>prev.score)localStorage.setItem('cs_best',JSON.stringify({score:sc.total,dur:S.durationMin,alumnos:S.nAlumnos,date:new Date().toISOString().slice(0,10)}));}catch(_){}
+  if(!S.submitted&&sc.total>0){S.submitted=true;
+    lbSubmit({name:cleanRankName(S.name),score:sc.total,dur:S.durationMin,alumnos:S.nAlumnos,win:!!win,mins:S.elapsed/60,con:S.con,combo:S.bestCombo}).then(r=>{S.lastRunId=r.id;const el=document.getElementById('rank-status');if(el)el.textContent=r.rank!=null?`🏆 ¡Puesto #${r.rank+1} en el ranking de ${S.durationMin} min!`:'✅ Puntuación registrada en el ranking.';}).catch(()=>{const el=document.getElementById('rank-status');if(el)el.textContent='📶 Sin conexión: el ranking no se pudo actualizar (tu marca local sí).';});}
   Music.stop();if(win)SFX.win();else SFX.lose();setTimeout(()=>Music.start(),2500);
 }
+
+/* ============ PUNTOS + RANKING MUNDIAL (Upstash Redis) ============ */
+// ⚠️ El token es público por diseño: el juego es 100% estático (GitHub Pages) y el
+// navegador lo necesita para leer/escribir. La base SOLO guarda puntuaciones.
+// Si alguien la spamea, se regenera el token en Upstash y se actualiza aquí.
+const LB_URL='https://moral-buck-242215.upstash.io';
+const LB_TOKEN='gQAAAAAAA7InAAIgcDJkNDZjNzI3NmNkNjE0NWY4ODI1ZTYwNmFlMTczYjEwMw';
+function cleanRankName(v){return String(v||'Anónimo').replace(/[<>{}\/\\]/g,'').trim().slice(0,16)||'Anónimo';}
+function escapeHtml(s){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function calcScore(kind){ // kind: 'epic' | 'win' | null
+  const mins=S.elapsed/60;
+  let pts=S.con*10 + mins*20 + S.resolved*15 + (S.timeouts||0)*-10 + S.bestCombo*10 + S.clicks*1 + S.lessons*5;
+  if(kind==='epic')pts+=2000; else if(kind==='win')pts+=500; else pts-=200;
+  pts=Math.max(0,pts);
+  const mult=(1+S.nAlumnos/30)*(1+S.durationMin/50);
+  return {base:Math.round(pts),mult:mult,total:Math.min(99999,Math.round(pts*mult))};
+}
+async function lbPipe(cmds){
+  const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),9000);
+  try{const r=await fetch(LB_URL+'/pipeline',{method:'POST',headers:{Authorization:'Bearer '+LB_TOKEN,'Content-Type':'application/json'},body:JSON.stringify(cmds),signal:ctl.signal});
+  if(!r.ok)throw new Error('lb '+r.status);return await r.json();}
+  finally{clearTimeout(to);}
+}
+async function lbSubmit(e){
+  const id=Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36);
+  await lbPipe([['ZADD','cs1:lb:all',e.score,id],['ZADD','cs1:lb:'+e.dur,e.score,id],['HSET','cs1:run:'+id,'name',e.name,'score',String(e.score),'dur',String(e.dur),'alumnos',String(e.alumnos),'win',e.win?'1':'0','mins',e.mins.toFixed(1),'con',String(Math.round(e.con)),'combo',String(e.combo),'date',new Date().toISOString().slice(0,10)],['ZREMRANGEBYRANK','cs1:lb:all','0','-101'],['ZREMRANGEBYRANK','cs1:lb:'+e.dur,'0','-101']]);
+  let rank=null;
+  try{const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),8000);
+  const r=await fetch(LB_URL+'/zrevrank/cs1:lb:'+e.dur+'/'+id,{method:'POST',headers:{Authorization:'Bearer '+LB_TOKEN},signal:ctl.signal});clearTimeout(to);
+  if(r.ok){const j=await r.json();rank=j.result;}}catch(_){}
+  return {rank,id};
+}
+async function lbTop(board){
+  const key='cs1:lb:'+(board==='all'?'all':board);
+  const z=await lbPipe([['ZREVRANGE',key,'0','9','WITHSCORES']]);
+  const arr=(z[0]&&z[0].result)||[];if(!arr.length)return [];
+  const gets=[];for(let i=0;i<arr.length;i+=2)gets.push(['HGETALL','cs1:run:'+arr[i]]);
+  const hs=await lbPipe(gets);const out=[];
+  for(let k=0;k<gets.length;k++){const a=(hs[k]&&hs[k].result)||[];const o={};for(let j=0;j<a.length;j+=2)o[a[j]]=a[j+1];o.score=arr[k*2+1];o.id=arr[k*2];if(o.name!=null)out.push(o);}
+  return out;
+}
+let rankPrevPaused=false;
+function renderBest(){try{const b=JSON.parse(localStorage.getItem('cs_best')||'null');document.getElementById('rank-best').innerHTML=b?`⭐ Tu mejor marca: <b>${Number(b.score).toLocaleString('es')} pts</b> (${b.dur}' · ${b.alumnos} alum · ${b.date})`:'⭐ Tu mejor marca: — (juega y entra en el ranking)';}catch(_){}}
+async function loadBoard(b){
+  document.querySelectorAll('#rank-tabs button').forEach(x=>x.classList.toggle('sel',x.dataset.b===b));
+  const L=document.getElementById('rank-list');L.innerHTML='<div class="satire">⏳ Cargando héroes...</div>';
+  try{const rows=await lbTop(b);
+  if(!rows.length){L.innerHTML='<div class="satire">Aún no hay puntuaciones aquí. ¡Sé la primera leyenda del claustro!</div>';return;}
+  L.innerHTML='';rows.forEach((r,i)=>{const d=document.createElement('div');d.className='rank-row'+(r.id===S.lastRunId?' me':'');
+  const medal=['🥇','🥈','🥉'][i]||`<span class="rank-pos">#${i+1}</span>`;
+  d.innerHTML=`${medal}<span style="flex:1"><b>${escapeHtml(r.name||'?')}</b><br><span style="opacity:.7;font-size:12px">${r.alumnos} alum · ${r.dur}' · ${r.win==='1'?'🏆':'💀'} · ${r.mins} min · combo x${r.combo}</span></span><b>${Number(r.score).toLocaleString('es')}</b>`;L.appendChild(d);});}
+  catch(e){L.innerHTML='<div class="satire">📶 Sin conexión al ranking. Tu marca local sí se guarda.</div>';}
+}
+function openRank(){AudioSys.init();SFX.ui();rankPrevPaused=S.paused;if(S.playing)S.paused=true;document.getElementById('rank-screen').classList.remove('hidden');renderBest();loadBoard('all');}
 
 /* ============ START ============ */
 document.getElementById('start-btn').onclick=()=>{
@@ -1305,7 +1400,7 @@ document.getElementById('start-btn').onclick=()=>{
   S.con=0;S.est=15;S.ans=10;S.sal=100;S.totalEvents=0;S.resolved=0;S.clicks=0;S.lessons=0;S.elapsed=0;
   S.eventCD=3;S.activeEvents=[];S.playing=true;S.paused=false;S.warned=false;S.exiting=false;S.exitT=0;S._bell2=false;S._epicDone=false;modalStack=[];evtId=0;wrap.innerHTML='';wrap.classList.remove('show');
   S.combo=0;S.comboT=0;S.bestCombo=0;S.coffeeCD=0;S.coffeeT=0;S.shoutCD=0;S.silenceT=0;S.reboundT=0;S.deleCD=20;S.deleTrust=0;S.warn75={est:false,ans:false,sal:false};S.slowmoT=0;S.focusT=0;S.focusP=null;
-  S.boardCD=0;S.chalkLeft=6;S.pcCD=0;S.writeT=0;S.slideT=7;projOn=false;wifiDown=false;roll=null;slideI=0;lessonI=0;teacher.userData.walk=null;teacher.position.set(-5.2,0,-2.6);teacher.rotation.y=0;faders.length=0;kids.forEach(resetOpacity);resetOpacity(teacher);S._epicFade=false;drawBoard(LESSONS[0],'¡SILENCIO! Examen viernes');drawSlideCur();
+  S.boardCD=0;S.chalkLeft=6;S.pcCD=0;S.writeT=0;S.slideT=7;projOn=false;wifiDown=false;roll=null;slideI=0;lessonI=0;teacher.userData.walk=null;teacher.position.set(-5.2,0,-2.6);teacher.rotation.y=0;faders.length=0;kids.forEach(resetOpacity);resetOpacity(teacher);S._epicFade=false;S.timeouts=0;S.submitted=false;S.lastRunId=null;drawBoard(LESSONS[0],'¡SILENCIO! Examen viernes');drawSlideCur();
   floorDebris.forEach(d=>scene.remove(d.mesh));floorDebris.length=0;
   confetti.forEach(c=>scene.remove(c.mesh));confetti.length=0;
   refreshChaosBadge();
