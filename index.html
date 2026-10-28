@@ -352,10 +352,11 @@ slideMesh.position.set(1.8,2.4,-5.22);room.add(slideMesh);
 const stationMeshes=[piz,proj,screenP,laptopMesh,pcHit,projHit];
 const stationLabels=[];
 let roll=null; // pasando lista: {queue,current,deadline,hits,total}
-function stationLabel(e,x,y,z){const s=emojiSprite(e);s.position.set(x,y,z);s.scale.set(0.7,0.7,1);scene.add(s);stationLabels.push({s,y,ph:Math.random()*6});}
-stationLabel('🖊️',-3.1,3.75,-5.1);
-stationLabel('📽️',0,4.15,1);
-stationLabel('💻',-5.2,2.1,-3.6);
+const stationLabelSprites=[]; // las etiquetas tambien se pueden clicar
+function stationLabel(e,x,y,z,st){const s=emojiSprite(e);s.position.set(x,y,z);s.scale.set(0.7,0.7,1);s.userData.station=st;scene.add(s);stationLabels.push({s,y,ph:Math.random()*6});stationLabelSprites.push(s);}
+stationLabel('🖊️',-3.1,3.75,-5.1,'board');
+stationLabel('📽️',0,4.15,1,'proj');
+stationLabel('💻',-5.2,2.1,-3.6,'pc');
 // Ventanas izquierda + cortinas que se mueven con la corriente
 const curtains=[];
 for(let i=0;i<3;i++){const w=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.8,1.8),new THREE.MeshStandardMaterial({color:0xbfe9ff,emissive:0x9fd8ff,emissiveIntensity:.7}));w.position.set(-6.85,2.6,-3+i*2.6);room.add(w);room.add(box(0.12,0.12,2,0xffffff,-6.85,3.55,-3+i*2.6));room.add(box(0.12,0.12,2,0xffffff,-6.85,1.65,-3+i*2.6));
@@ -1142,6 +1143,7 @@ function handleStation(st){
 }
 /* click: 1º iconos 3D sobre la cabeza (resolver), 2º alumno (mirada fulminante) */
 const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+ray.camera=camera; // imprescindible: sin esto los sprites (iconos 3D) no reciben clics
 function headSprites(){
   const arr=[];
   markers.forEach(mk=>{if(mk.head)arr.push(mk.head.sA,mk.head.sB);});
@@ -1162,6 +1164,11 @@ renderer.domElement.addEventListener('pointerdown',ev=>{
         if(it){S.clicks++;resolveEventById(it.id,it.ev.opts[a.opt]);return;}
       }
     }
+  }
+  // Etiquetas flotantes (🖊️📽️💻): clican como las estaciones
+  if(stationLabelSprites.length){
+    const hitL=ray.intersectObjects(stationLabelSprites,false);
+    if(hitL.length&&hitL[0].object.userData.station){handleStation(hitL[0].object.userData.station);return;}
   }
   const stHits=ray.intersectObjects(stationMeshes,false);
   const hits=ray.intersectObjects(kids,true);
@@ -1216,9 +1223,10 @@ renderer.domElement.addEventListener('pointermove',ev=>{
   ray.setFromCamera(mouse,camera);
   const hh=headSprites();
   const hits2=hh.length?ray.intersectObjects(hh,false):[];
+  const lab=stationLabelSprites.length?ray.intersectObjects(stationLabelSprites,false):[];
   const hits=ray.intersectObjects(kids,true);
   let cur='';
-  if(hits2.length)cur='pointer';
+  if(hits2.length||lab.length)cur='pointer';
   else if(hits.length){let o=hits[0].object;while(o&&!kids.includes(o))o=o.parent;if(o&&(o.userData.mood!=='ok'||(roll&&roll.current===o)))cur='pointer';}
   if(!cur){const sh=ray.intersectObjects(stationMeshes,false);if(sh.length)cur='pointer';}
   renderer.domElement.style.cursor=cur;
