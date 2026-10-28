@@ -2,19 +2,28 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e0f1a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Classroom Survival — ¡Sobrevive a la jornada!</title>
+<!-- Fuentes cargadas SIN bloquear el pintado: un @import lento dejaba la pantalla en blanco en móvil -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800&display=swap"></noscript>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
   :root{--bg:#0e0f1a;--panel:#191b2e;--accent:#ffd23f;--accent2:#3ff2c4;--danger:#ff4d6d;--ink:#fff}
-  body{background:var(--bg);color:var(--ink);font-family:Rubik,sans-serif;overflow:hidden;height:100vh}
+  html,body{overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+  body{background:var(--bg);color:var(--ink);font-family:Rubik,sans-serif;overflow:hidden;height:100vh;height:100dvh;-webkit-user-select:none;user-select:none}
   #c{position:fixed;inset:0;display:block}
   .pix{font-family:'Press Start 2P',monospace}
   /* HUD */
   #hud{position:fixed;top:0;left:0;right:0;display:flex;gap:10px;align-items:stretch;padding:10px 12px;pointer-events:none;z-index:10}
   #hud .card{pointer-events:auto;background:rgba(20,22,40,.88);backdrop-filter:blur(8px);border:2px solid #2a2e55;border-radius:14px;padding:8px 12px;flex:1;box-shadow:0 6px 20px rgba(0,0,0,.4)}
   .bar-label{display:flex;justify-content:space-between;font-size:12px;font-weight:800;letter-spacing:.3px;margin-bottom:5px}
+  .bar-label b.lbl{font-weight:inherit}
   .bar{height:12px;background:#0a0b16;border-radius:99px;overflow:hidden;border:1px solid #333664}
   .bar>i{display:block;height:100%;width:50%;border-radius:99px;transition:width .6s cubic-bezier(.2,.9,.2,1)}
   #b-con>i{background:linear-gradient(90deg,#3ff2c4,#00c2ff)}
@@ -68,6 +77,8 @@
   #event-desc{font-size:11px;line-height:1.35;max-height:52px;overflow:hidden;text-overflow:ellipsis}
   /* Screens */
   #help-screen{z-index:60}
+  /* Por encima de #end-screen (mismo z-index 50 y va después en el DOM): si no, el ranking se abre tapado tras la partida */
+  #rank-screen{z-index:70}
   /* Manual compacto: cabe en pantalla, el texto rueda dentro y el botón siempre visible */
   #help-screen .panel{width:min(640px,94vw);max-height:92vh;display:flex;flex-direction:column}
   #help-screen .panel-hero{padding:16px 20px}
@@ -137,9 +148,60 @@
     #left-dock{left:8px;bottom:132px;width:250px;max-width:62vw;max-height:50vh}
     #powers-bar{top:224px;right:8px;bottom:auto;width:200px;font-size:11px}
   }
+  /* Paneles centrados sin recortar la cabecera al desbordar (móvil) */
+  .screen{align-items:flex-start}
+  .panel{margin:auto}
+  #help-screen .panel{max-height:92vh;max-height:92dvh}
+  .main-btns{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+  /* Aviso si el juego no arranca (navegador sin WebGL / módulos, o red caída) */
+  #boot-warn{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:99;max-width:92vw;background:#2a1030;border:2px solid #ff4d6d;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:13px;line-height:1.45;box-shadow:0 10px 30px rgba(0,0,0,.6);text-align:left}
+  #boot-warn[hidden]{display:none}
+  #boot-warn button{background:var(--accent);border:none;border-radius:10px;padding:9px 11px;font-weight:800;cursor:pointer;white-space:nowrap;font-family:Rubik}
+  /* ================= MÓVIL ================= */
+  @media (max-width:760px){
+    /* HUD compacto: reloj + nivel de caos en una fila, barras solo con emoji y % */
+    #hud{padding:5px 6px;gap:5px}
+    #hud .card{min-width:0;padding:5px 6px;border-radius:10px;box-shadow:none;pointer-events:none;flex:1 1 0;overflow:hidden}
+    #timer-card{flex:0 1 auto;display:flex;align-items:center;gap:6px;overflow:hidden;text-align:left}
+    #timer{font-size:15px}
+    #day-label,#class-info{display:none}
+    #chaos{margin-top:0;flex:0 1 auto;font-size:10px;white-space:nowrap}
+    #chaos .ctxt{display:none}
+    .bar-label{font-size:10px;margin-bottom:3px}
+    .bar-label .lbl{display:none}
+    .bar{height:9px}
+    /* Avisos */
+    #toast{top:56px;font-size:12px;padding:7px 13px;max-width:92vw;text-align:center}
+    #combo-badge{top:112px;left:6px;right:auto;font-size:12px;padding:6px 11px}
+    /* Acciones: DAR CLASE primero y botones compactos; sin atajos de teclado */
+    #actions{left:6px;right:6px;bottom:6px;gap:5px;pointer-events:none}
+    #actions .btn{padding:8px;font-size:11px;border-radius:11px;box-shadow:0 4px 0 rgba(0,0,0,.4)}
+    #btn-teach{flex:1 1 auto}
+    .kb{display:none}
+    /* Dock de crisis a ancho completo sobre la barra de acciones (el JS ajusta el bottom) */
+    #left-dock{left:6px;right:6px;width:auto;max-width:none;bottom:84px;max-height:44vh;justify-content:safe flex-end;overflow-y:auto;gap:6px}
+    #left-dock #log{max-height:9vh}
+    #powers-bar,#hint{display:none}
+    /* Paneles (inicio, ayuda, ranking, final) */
+    .screen{padding:10px}
+    .panel-hero{padding:16px}
+    .panel-body{padding:14px;gap:11px}
+    .satire{font-size:12.5px;padding:10px}
+    .main-btns{grid-template-columns:1fr 1fr}
+    .main-btns #start-btn{grid-column:1/-1}
+    #start-btn{font-size:13px;padding:15px}
+    .seg{gap:6px}
+    .seg button{min-width:0;flex:1 1 calc(50% - 3px);padding:11px 6px;font-size:13px}
+    #rank-list{max-height:46vh}
+    #end-score{font-size:12.5px}
+    .stat{font-size:12px;padding:9px}
+    .stat b{font-size:19px}
+  }
+  @media (max-width:419px){#left-dock{bottom:118px}}
 </style>
 </head>
 <body>
+<div id="boot-warn" hidden><b>No se ha podido iniciar el juego.</b><button onclick="location.reload()">🔄 REINTENTAR</button></div>
 <canvas id="c"></canvas>
 <div id="vignette"></div>
 
@@ -148,12 +210,12 @@
     <div id="timer" class="pix">10:00</div>
     <div id="day-label">⏱️ CLASSROOM SURVIVAL</div>
     <div style="font-size:12px;margin-top:4px" id="class-info">6ºB • 18 alumn@s</div>
-    <div><span id="chaos" class="lv1">😌 CAOS Lv.1 · Calma tensa</span></div>
+    <div><span id="chaos" class="lv1"><b class="clv">Lv.1</b><span class="ctxt"> 😌 Calma tensa</span></span></div>
   </div>
-  <div class="card"><div class="bar-label"><span>📚 Conocimiento</span><span id="v-con">0%</span></div><div class="bar" id="b-con"><i></i></div></div>
-  <div class="card"><div class="bar-label"><span>😡 Estrés</span><span id="v-est">0%</span></div><div class="bar" id="b-est"><i></i></div></div>
-  <div class="card"><div class="bar-label"><span>😰 Ansiedad</span><span id="v-ans">0%</span></div><div class="bar" id="b-ans"><i></i></div></div>
-  <div class="card"><div class="bar-label"><span>🧠 Salud mental</span><span id="v-sal">100%</span></div><div class="bar" id="b-sal"><i></i></div></div>
+  <div class="card"><div class="bar-label"><span>📚 <b class="lbl">Conocimiento</b></span><span id="v-con">0%</span></div><div class="bar" id="b-con"><i></i></div></div>
+  <div class="card"><div class="bar-label"><span>😡 <b class="lbl">Estrés</b></span><span id="v-est">0%</span></div><div class="bar" id="b-est"><i></i></div></div>
+  <div class="card"><div class="bar-label"><span>😰 <b class="lbl">Ansiedad</b></span><span id="v-ans">0%</span></div><div class="bar" id="b-ans"><i></i></div></div>
+  <div class="card"><div class="bar-label"><span>🧠 <b class="lbl">Salud mental</b></span><span id="v-sal">100%</span></div><div class="bar" id="b-sal"><i></i></div></div>
 </div>
 
 <div id="toast"></div>
@@ -163,7 +225,7 @@
 <div id="combo-badge" class="pix">👁️ COMBO x2</div>
 <div id="powers-bar"></div>
 <div id="actions">
-  <button class="btn" id="btn-teach">📚 DAR CLASE (espacio)</button>
+  <button class="btn" id="btn-teach">📚 DAR CLASE<span class="kb"> (espacio)</span></button>
   <button class="btn" id="btn-breathe">☕ RESPIRAR</button>
   <button class="btn" id="btn-coffee" title="Ansiedad -35 de golpe, pero 30s de tembleque: enseñas peor. CD 90s (tecla 1)">☕ CAFÉ (1)</button>
   <button class="btn" id="btn-shout" title="Silencio total 10s, pero luego rebote de caos x2 durante 20s. CD 120s (tecla 2)">📢 TRUENO (2)</button>
@@ -220,7 +282,7 @@
       <div><label>Duración de la partida (máx 50 min reales... ¿sobrevivirás?)</label><div class="seg" id="seg-time">
         <button data-v="5">5 min ⚡</button><button data-v="10" class="sel">10 min ☕</button><button data-v="15">15 min 📚</button><button data-v="25">25 min 🔥</button><button data-v="50">50 min 💀</button>
       </div></div>
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px">
+      <div class="main-btns">
         <button id="start-btn">▶ EMPEZAR LA CLASE</button>
         <button id="btn-rank">🏆<br>RANKING</button>
         <button id="btn-controls">🎮<br>CONTROLES</button>
@@ -261,11 +323,19 @@
   </div>
 </div>
 
-<script src="https://unpkg.com/parse/dist/parse.min.js"></script>
-<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script src="https://unpkg.com/parse/dist/parse.min.js" defer></script>
 <script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+/* Marca de arranque: si a los pocos segundos no existe, el navegador no ha podido
+   ejecutar el módulo (sin import-map, sin ES modules, red caída...). */
+document.documentElement.dataset.boot='1';
+const bootWarn=msg=>{const w=document.getElementById('boot-warn');if(!w)return;if(!msg){w.hidden=true;return;}w.hidden=false;const b=w.querySelector('b');if(b)b.textContent=msg;};
+/* Three.js por URL completa, con CDN de respaldo. Antes se usaba un import-map:
+   en navegadores móviles antiguos eso rompía TODO el script y el juego no arrancaba. */
+let THREE=null;
+for(const u of ['https://unpkg.com/three@0.160.0/build/three.module.js','https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js']){
+  try{THREE=await import(u);break;}catch(err){console.warn('No se pudo cargar three desde '+u,err);}
+}
+if(!THREE){document.documentElement.dataset.boot='error';bootWarn('No se pudo descargar Three.js (¿sin conexión?). Recarga la página.');throw new Error('three.js no disponible');}
 
 /* ============ ESTADO ============ */
 const S = {
@@ -294,16 +364,91 @@ document.querySelectorAll('#seg-time button').forEach(b=>b.onclick=()=>{document
 document.getElementById('inp-alumnos').oninput=e=>document.getElementById('al-val').textContent=e.target.value;
 
 /* ============ THREE SETUP ============ */
+const isTouch=matchMedia('(pointer:coarse)').matches; // móvil / tablet: menos coste y sin MSAA (ya hay DPR alto)
 const canvas=document.getElementById('c');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+let renderer;
+try{
+  renderer=new THREE.WebGLRenderer({canvas,antialias:!isTouch,powerPreference:'high-performance'});
+}catch(err){
+  document.documentElement.dataset.boot='error';
+  bootWarn('Tu navegador no puede iniciar el 3D (WebGL no disponible).');
+  throw err;
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,isTouch?1.75:2)); // antes: 1x => borroso en pantallas retina
 renderer.setSize(innerWidth,innerHeight);
-renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=isTouch?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;
+document.documentElement.dataset.boot='ready';
+bootWarn(''); // por si el aviso se mostró mientras tardaba en cargar
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x0e0f1a);
 scene.fog=new THREE.Fog(0x0e0f1a,18,36);
 const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,100);
 camera.position.set(0,7,11.5);
-const controls=new OrbitControls(camera,renderer.domElement);
+/* --- Cámara orbital propia: 1 dedo/ratón gira, 2 dedos o rueda hacen zoom.
+   Sustituye a OrbitControls para no depender de import-map (rotaba el arranque en
+   móviles antiguos) y para poder distinguir un TOQUE (clicar alumno/estación) de un
+   ARRASTRE (mirar alrededor), que antes hacía clics accidentales al girar la cámara. */
+class OrbitLite extends THREE.EventDispatcher{
+  constructor(camera,dom){
+    super();
+    this.object=camera;this.dom=dom;
+    this.target=new THREE.Vector3(0,0.9,-1);
+    this.minDistance=4;this.maxDistance=16;this.minPolarAngle=.05;this.maxPolarAngle=Math.PI/2;
+    this.rotateSpeed=1;this.zoomSpeed=1;this.enabled=true;this.enablePan=false;
+    this.pointers=new Map();this.dTheta=0;this.dPhi=0;this.dolly=0;
+    this._off=new THREE.Vector3();this._sph=new THREE.Spherical();this._pinch=0;this._prev={x:0,y:0};
+    dom.style.touchAction='none'; // el navegador no roba los gestos: ni scroll ni zoom de página sobre el canvas
+    dom.addEventListener('pointerdown',e=>this._down(e));
+    dom.addEventListener('pointermove',e=>this._move(e));
+    ['pointerup','pointercancel'].forEach(t=>dom.addEventListener(t,e=>this._up(e)));
+    dom.addEventListener('contextmenu',e=>e.preventDefault());
+    dom.addEventListener('wheel',e=>{if(!this.enabled)return;e.preventDefault();this.dolly+=e.deltaY*.0013*this.zoomSpeed;},{passive:false});
+  }
+  _down(e){
+    if(!this.enabled||(e.pointerType==='mouse'&&e.button!==0))return;
+    this.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(this.pointers.size===1)this._prev={x:e.clientX,y:e.clientY};
+    if(this.pointers.size===2)this._pinch=this._dist();
+    try{this.dom.setPointerCapture(e.pointerId);}catch(_){}
+  }
+  _move(e){
+    if(!this.enabled||!this.pointers.has(e.pointerId))return;
+    this.pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    const h=this.dom.clientHeight||1;
+    if(this.pointers.size===1){
+      const dx=e.clientX-this._prev.x,dy=e.clientY-this._prev.y;
+      this._prev={x:e.clientX,y:e.clientY};
+      this.dTheta-=2*Math.PI*dx/h*this.rotateSpeed;
+      this.dPhi-=2*Math.PI*dy/h*this.rotateSpeed;
+    }else if(this.pointers.size===2){
+      const d=this._dist();
+      if(this._pinch>0&&d>0)this.dolly+=(this._pinch-d)*.004*this.zoomSpeed; // dedos separados = acercar
+      this._pinch=d;
+    }
+  }
+  _up(e){
+    this.pointers.delete(e.pointerId);
+    if(this.pointers.size<2)this._pinch=0;
+  }
+  _dist(){const p=[...this.pointers.values()];return p.length<2?0:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);}
+  update(){
+    const cam=this.object;
+    this._off.copy(cam.position).sub(this.target);
+    const sph=this._sph.setFromVector3(this._off);
+    let moved=false;
+    if(this.dTheta||this.dPhi){sph.theta+=this.dTheta;sph.phi+=this.dPhi;this.dTheta=0;this.dPhi=0;moved=true;}
+    if(this.dolly){sph.radius*=Math.exp(this.dolly);this.dolly=0;moved=true;}
+    sph.phi=Math.max(this.minPolarAngle,Math.min(this.maxPolarAngle,sph.phi));
+    sph.radius=Math.max(this.minDistance,Math.min(this.maxDistance,sph.radius));
+    this._off.setFromSpherical(sph);
+    const px=cam.position.x,py=cam.position.y,pz=cam.position.z;
+    cam.position.copy(this.target).add(this._off);
+    cam.lookAt(this.target);
+    if(!moved&&(cam.position.x!==px||cam.position.y!==py||cam.position.z!==pz))moved=true; // cambio externo (zoom slider, foco)
+    if(moved)this.dispatchEvent({type:'change'});
+  }
+}
+const controls=new OrbitLite(camera,renderer.domElement);
 controls.target.set(0,0.9,-1); controls.maxPolarAngle=1.45; controls.minDistance=4; controls.maxDistance=16; controls.enablePan=false;
 function clampCamera(){camera.position.x=Math.max(-10,Math.min(10,camera.position.x));camera.position.y=Math.max(1,Math.min(10,camera.position.y));camera.position.z=Math.max(-5.0,Math.min(13,camera.position.z));}
 /* --- Zoom: slider + rueda + teclas --- */
@@ -314,7 +459,7 @@ controls.addEventListener('change',()=>{const d=camera.position.distanceTo(contr
 addEventListener('keydown',e=>{if(e.key==='+'||e.key==='=')setZoom(camera.position.distanceTo(controls.target)-1.2);else if(e.key==='-'||e.key==='_')setZoom(camera.position.distanceTo(controls.target)+1.2);});
 
 scene.add(new THREE.HemisphereLight(0xffffff,0x334,0.85));
-const sun=new THREE.DirectionalLight(0xfff2cc,1.6); sun.position.set(6,10,4); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); scene.add(sun);
+const sun=new THREE.DirectionalLight(0xfff2cc,1.6); sun.position.set(6,10,4); sun.castShadow=true; sun.shadow.mapSize.set(isTouch?1024:2048,isTouch?1024:2048); scene.add(sun);
 const projLight=new THREE.SpotLight(0xbfe9ff,0,20,0.5,0.4); projLight.position.set(0,4.4,1); scene.add(projLight); scene.add(projLight.target);
 
 function box(w,h,d,c,x=0,y=0,z=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:c,roughness:.85}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;return m;}
@@ -847,7 +992,7 @@ function chaosOf(){
 }
 function refreshChaosBadge(forceAnnounce){
   const c=chaosOf();const el=document.getElementById('chaos');
-  if(el&&el.dataset.lv!=String(c.level)){el.dataset.lv=String(c.level);el.className=c.cls;el.textContent=`${c.name} · Lv.${c.level}`;
+  if(el&&el.dataset.lv!=String(c.level)){el.dataset.lv=String(c.level);el.className=c.cls;el.innerHTML=`<b class="clv">Lv.${c.level}</b><span class="ctxt"> ${c.name}</span>`;
     if(S.playing&&c.level>1){log(`⚠️ FASE ${c.level}: ${c.name}. Los eventos llegan más rápido${c.maxModals>1?' ¡Y A LA VEZ!':''}.`,'#ff8fa3');SFX.phaseUp();toast(`⚠️ ${c.name}`);}}
   return c;
 }
@@ -1185,7 +1330,10 @@ function headSprites(){
   markers.forEach(mk=>{if(mk.head)arr.push(mk.head.sA,mk.head.sB);});
   return arr;
 }
-renderer.domElement.addEventListener('pointerdown',ev=>{
+/* TOQUE vs ARRASTRE: en móvil, girar la cámara con un dedo NO debe clicar alumnos
+   (antes cada arrastre disparaba miradas/penalizaciones). Solo cuenta un toque limpio. */
+let tapStart=null;
+function handleCanvasTap(ev){
   if(!S.playing)return;
   mouse.x=(ev.clientX/innerWidth)*2-1;mouse.y=-(ev.clientY/innerHeight)*2+1;
   ray.setFromCamera(mouse,camera);
@@ -1249,7 +1397,20 @@ renderer.domElement.addEventListener('pointerdown',ev=>{
       o.scale.set(1.15,0.9,1.15);setTimeout(()=>o.scale.set(1,1,1),200);
     }
   }
+}
+renderer.domElement.addEventListener('pointerdown',ev=>{
+  if(tapStart){tapStart.multi=true;return;} // segundo dedo = gesto de zoom, no un toque
+  if(!S.playing)return;
+  tapStart={x:ev.clientX,y:ev.clientY,t:performance.now(),id:ev.pointerId,multi:false};
 });
+renderer.domElement.addEventListener('pointerup',ev=>{
+  const t=tapStart;tapStart=null;
+  if(!t||t.multi||ev.pointerId!==t.id||!S.playing)return;
+  if(Math.hypot(ev.clientX-t.x,ev.clientY-t.y)>14)return; // se movió demasiado: era un arrastre
+  if(performance.now()-t.t>900)return;
+  handleCanvasTap(ev);
+});
+renderer.domElement.addEventListener('pointercancel',()=>{tapStart=null;});
 /* cursor de mano sobre discolos */
 let hoverTick=0;
 renderer.domElement.addEventListener('pointermove',ev=>{
@@ -1270,6 +1431,8 @@ renderer.domElement.addEventListener('pointermove',ev=>{
 
 /* ============ BARRAS / TIMER ============ */
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+// El parentesis del atajo de teclado se oculta en móvil (.kb), donde no hay teclado
+const kbdHint=s=>`<span class="kb">${s}</span>`;
 function updateBars(){
   const set=(id,v,val)=>{document.querySelector(id+' i').style.width=v+'%';document.querySelector(val).textContent=Math.round(v)+'%';};
   set('#b-con',S.con,'#v-con');set('#b-est',S.est,'#v-est');set('#b-ans',S.ans,'#v-ans');set('#b-sal',S.sal,'#v-sal');
@@ -1278,8 +1441,8 @@ function updateBars(){
   document.getElementById('btn-teach').disabled=S.teachCD>0;
   document.getElementById('btn-breathe').style.opacity=S.breatheCD>0?0.5:1;
   const bc=document.getElementById('btn-coffee'),bs=document.getElementById('btn-shout');
-  if(bc){bc.disabled=S.coffeeCD>0;bc.textContent=S.coffeeCD>0?`☕ CAFÉ (${Math.ceil(S.coffeeCD)}s)`:(S.coffeeT>0?'☕ TEMBLEQUE...':'☕ CAFÉ (1)');}
-  if(bs){bs.disabled=S.shoutCD>0;bs.textContent=S.shoutCD>0?`📢 TRUENO (${Math.ceil(S.shoutCD)}s)`:(S.silenceT>0?`📢 ¡SHH! (${Math.ceil(S.silenceT)}s)`:'📢 TRUENO (2)');}
+  if(bc){bc.disabled=S.coffeeCD>0;bc.innerHTML=S.coffeeCD>0?`☕ CAFÉ ${kbdHint('(')}${Math.ceil(S.coffeeCD)}s${kbdHint(')')}`:(S.coffeeT>0?'☕ TEMBLEQUE...':`☕ CAFÉ${kbdHint(' (1)')}`);}
+  if(bs){bs.disabled=S.shoutCD>0;bs.innerHTML=S.shoutCD>0?`📢 TRUENO ${kbdHint('(')}${Math.ceil(S.shoutCD)}s${kbdHint(')')}`:(S.silenceT>0?`📢 ¡SHH! ${kbdHint('(')}${Math.ceil(S.silenceT)}s${kbdHint(')')}`:`📢 TRUENO${kbdHint(' (2)')}`);}
   const pb=document.getElementById('powers-bar');
   if(pb){let h=`<span>🌟 delegada ${S.deleTrust}/3</span>`;if(S.coffeeT>0)h+=`<span>☕ tembleque ${Math.ceil(S.coffeeT)}s (enseñas peor)</span>`;if(S.silenceT>0)h+=`<span>📢 silencio ${Math.ceil(S.silenceT)}s</span>`;if(S.reboundT>0)h+=`<span>🔥 rebote x2 ${Math.ceil(S.reboundT)}s</span>`;h+=`<span>🖊️ tiza x${S.chalkLeft??6}</span>`;h+=`<span>📽️ ${wifiDown?'📶ERROR':projOn?'ON':'off'}</span>`;h+=`<span>📋 ${roll?'¡lista!':(S.pcCD||0)>0?'lista '+Math.ceil(S.pcCD)+'s':'lista'}</span>`;pb.innerHTML=h;}
   [['#b-est',S.est,'est'],['#b-ans',S.ans,'ans'],['#b-sal',100-S.sal,'sal']].forEach(([id,v])=>{const el=document.querySelector(id);if(el)el.classList.toggle('crit',v>=75);});
@@ -1558,8 +1721,42 @@ function loop(){
   renderer.render(scene,camera);
 }
 buildClass(18);updateBars();
-addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+function applyViewport(){
+  const w=innerWidth,h=innerHeight,a=w/h||1;
+  camera.aspect=a;
+  // En vertical se abre el ángulo para que entre TODA la clase (antes solo veías una reja)
+  const vFov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(20*Math.PI/180)/a));
+  camera.fov=Math.max(55,Math.min(78,vFov));
+  camera.updateProjectionMatrix();
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,isTouch?1.75:2));
+  renderer.setSize(w,h);
+  layoutDock();
+}
+// El dock de crisis siempre encima de la barra de acciones (que cambia de alto al envolverse)
+function layoutDock(){
+  const dock=document.getElementById('left-dock'),act=document.getElementById('actions');
+  if(innerWidth<=760&&dock&&act)dock.style.bottom=(act.offsetHeight+12)+'px';
+  else if(dock)dock.style.bottom='';
+}
+applyViewport();
+addEventListener('resize',applyViewport);
+addEventListener('orientationchange',()=>setTimeout(applyViewport,120));
+if('ResizeObserver' in window)new ResizeObserver(layoutDock).observe(document.getElementById('actions'));
 loop();
+</script>
+<script>
+/* Red de seguridad: si en 15 s el módulo no ha arrancado, se explica en vez de dejar la pantalla muerta. */
+function bootWarn(msg){
+  var w=document.getElementById('boot-warn');if(!w)return;
+  w.hidden=false;var b=w.querySelector('b');if(b&&msg)b.textContent=msg;
+}
+setTimeout(function(){
+  var st=document.documentElement.dataset.boot;
+  if(st==='ready'||st==='error')return;
+  bootWarn(st==='1'
+    ? 'Tardamos en cargar el 3D (¿mala conexión?). Pulsa reintentar; si sigue así, tu navegador no es compatible.'
+    : 'Tu navegador no puede iniciar el juego (necesita WebGL y JavaScript de módulos). Prueba con Chrome, Safari o Firefox actualizados.');
+},15000);
 </script>
 </body>
 </html>
