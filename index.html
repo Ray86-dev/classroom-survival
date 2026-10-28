@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classroom Survival — ¡Sobrevive a la jornada!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rubik:wght@400;600;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0e0f1a;--panel:#191b2e;--accent:#ffd23f;--accent2:#3ff2c4;--danger:#ff4d6d;--ink:#fff}
+  body{background:var(--bg);color:var(--ink);font-family:Rubik,sans-serif;overflow:hidden;height:100vh}
+  #c{position:fixed;inset:0;display:block}
+  .pix{font-family:'Press Start 2P',monospace}
+  /* HUD */
+  #hud{position:fixed;top:0;left:0;right:0;display:flex;gap:10px;align-items:stretch;padding:10px 12px;pointer-events:none;z-index:10}
+  #hud .card{pointer-events:auto;background:rgba(20,22,40,.88);backdrop-filter:blur(8px);border:2px solid #2a2e55;border-radius:14px;padding:8px 12px;flex:1;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .bar-label{display:flex;justify-content:space-between;font-size:12px;font-weight:800;letter-spacing:.3px;margin-bottom:5px}
+  .bar{height:12px;background:#0a0b16;border-radius:99px;overflow:hidden;border:1px solid #333664}
+  .bar>i{display:block;height:100%;width:50%;border-radius:99px;transition:width .6s cubic-bezier(.2,.9,.2,1)}
+  #b-con>i{background:linear-gradient(90deg,#3ff2c4,#00c2ff)}
+  #b-est>i{background:linear-gradient(90deg,#ffd23f,#ff7a00)}
+  #b-ans>i{background:linear-gradient(90deg,#c084fc,#ff4d6d)}
+  #b-sal>i{background:linear-gradient(90deg,#7CFC6b,#0aa66b)}
+  #timer-card{min-width:170px;max-width:210px;text-align:center}
+  #timer{font-size:22px}
+  #day-label{font-size:11px;opacity:.7}
+  /* side log */
+  #log{position:fixed;left:12px;bottom:96px;width:300px;max-height:38vh;overflow:hidden;display:flex;flex-direction:column-reverse;gap:6px;z-index:9;pointer-events:none}
+  .log-item{background:rgba(15,17,32,.9);border-left:4px solid var(--accent2);border-radius:10px;padding:8px 10px;font-size:13px;animation:pop .35s ease}
+  @keyframes pop{from{transform:translateY(10px) scale(.96);opacity:0}}
+  /* actions */
+  #actions{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:10px;z-index:10}
+  .btn{font-family:Rubik;font-weight:800;border:none;border-radius:14px;padding:14px 18px;font-size:15px;cursor:pointer;transition:.15s;box-shadow:0 6px 0 rgba(0,0,0,.4)}
+  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.4)}
+  #btn-teach{background:var(--accent);color:#222}
+  #btn-teach:disabled{filter:grayscale(1);opacity:.6;cursor:wait}
+  #btn-breathe{background:#2a2e55;color:#fff;border:2px solid #3ff2c4}
+  #btn-pause{background:#22243d;color:#fff;border:2px solid #444}
+  #hint{position:fixed;bottom:12px;right:12px;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:10px;font-size:12px;z-index:10}
+  #hint input[type=range]{width:110px;vertical-align:middle;accent-color:#ffd23f}
+  #zoom-val{color:#ffd23f;font-weight:800}
+  /* Event modal */
+  /* Dock minimalista: las decisiones viven sobre la cabeza del alumno (3 iconos 3D).
+     Esto es solo un respaldo compacto, sin fondo que tape la clase. */
+  #event-wrap{position:fixed;left:10px;bottom:86px;display:none;flex-direction:column;gap:6px;z-index:30;max-width:300px;pointer-events:none;padding:0;background:none}
+  #event-wrap.show{display:flex}
+  #event-card, #event-card.stacked{width:290px;max-width:78vw;background:rgba(15,17,34,.92);border:2px solid #3ff2c4;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.5);animation:cardIn .25s cubic-bezier(.2,1.4,.4,1);pointer-events:auto;font-size:12px}
+  #head-hint{font-family:'Press Start 2P';font-size:9px;color:#fff;text-shadow:0 2px 0 #000;background:rgba(0,0,0,.55);border-radius:8px;padding:6px 8px;pointer-events:none}
+  @keyframes cardIn{from{transform:scale(.85) rotate(-1deg);opacity:0}}
+  #event-head{padding:14px 16px 10px;display:flex;gap:12px;align-items:center;background:rgba(255,255,255,.06)}
+  #event-emoji{font-size:44px;filter:drop-shadow(0 4px 0 rgba(0,0,0,.4))}
+  #event-title{font-family:'Press Start 2P';font-size:13px;line-height:1.5;color:var(--accent)}
+  #event-sub{font-size:12px;opacity:.7;margin-top:4px;font-family:Rubik}
+  #event-desc{padding:14px 16px;font-size:15px;line-height:1.5}
+  #event-timerbar{height:6px;background:#0a0b16}
+  #event-timerbar>i{display:block;height:100%;background:var(--danger);width:100%}
+  #event-opts{padding:12px 14px 16px;display:grid;gap:8px}
+  .opt{text-align:left;background:#fff;color:#15172e;border-radius:9px;padding:7px 9px;border:none;font-weight:700;font-size:12px;cursor:pointer;box-shadow:0 3px 0 #9aa0d0;display:flex;gap:6px;align-items:center}
+  .opt:hover{transform:translateY(-1px);filter:brightness(1.05)}
+  .opt small{display:block;font-weight:400;opacity:.7;margin-top:1px;font-size:10px}
+  #event-opts{display:flex;flex-direction:column;gap:5px;padding:8px}
+  #event-desc{font-size:11px;line-height:1.35;max-height:52px;overflow:hidden;text-overflow:ellipsis}
+  /* Screens */
+  #help-screen{z-index:60}
+  .screen{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,#2a2e68 0%,#0e0f1a 65%);padding:18px;overflow:auto}
+  .panel{width:min(760px,96vw);background:#171932;border:3px solid #fff;border-radius:24px;box-shadow:0 0 0 8px #262a5a,0 30px 80px rgba(0,0,0,.6);overflow:hidden}
+  .panel-hero{padding:22px 24px;background:linear-gradient(90deg,#ffd23f,#ff7a3f);color:#1a1a2e}
+  .panel-hero h1{font-family:'Press Start 2P';font-size:clamp(18px,4vw,30px);line-height:1.2}
+  .panel-hero p{margin-top:8px;font-weight:600}
+  .panel-body{padding:20px 22px;display:grid;gap:14px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:600px){.row{grid-template-columns:1fr}#log{width:220px;bottom:120px}}
+  label{font-size:13px;font-weight:800;opacity:.9;display:block;margin-bottom:6px}
+  input[type=text]{width:100%;padding:12px;border-radius:12px;border:2px solid #333664;background:#0f1126;color:#fff;font-size:15px}
+  .seg{display:flex;gap:8px;flex-wrap:wrap}
+  .seg button{flex:1;padding:12px;border-radius:12px;border:2px solid #333664;background:#0f1126;color:#fff;font-weight:800;cursor:pointer;min-width:90px}
+  .seg button.sel{background:var(--accent);color:#222;border-color:#fff}
+  input[type=range]{width:100%;accent-color:var(--accent);height:30px}
+  #start-btn{background:var(--accent2);font-family:'Press Start 2P';font-size:15px;padding:18px;border-radius:14px;border:none;cursor:pointer;box-shadow:0 6px 0 #0a7a5e}
+  #btn-controls{background:#2a2e55;color:#fff;font-family:'Press Start 2P';font-size:12px;line-height:1.6;padding:18px 10px;border-radius:14px;border:2px solid #3ff2c4;cursor:pointer;box-shadow:0 6px 0 #0a3a3a}
+  #btn-controls:hover{filter:brightness(1.15)}
+  .satire{background:#0f1126;border:2px dashed #4448a0;border-radius:12px;padding:12px;font-size:13.5px;line-height:1.5;color:#d6d8ff}
+  .hidden{display:none!important}
+  #toast{position:fixed;top:86px;left:50%;transform:translateX(-50%);z-index:40;background:#fff;color:#111;border-radius:99px;padding:8px 16px;font-weight:800;display:none;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  #vignette{position:fixed;inset:0;pointer-events:none;z-index:5;transition:.5s;box-shadow:inset 0 0 120px rgba(255,0,60,0)}
+  #btn-sound.on{border-color:#3ff2c4;box-shadow:0 6px 0 #0a7a5e}
+  #btn-sound.off,#btn-music.off{filter:grayscale(1);opacity:.55}
+  #btn-music.on{border-color:#ffd23f;box-shadow:0 6px 0 #8a6b00}
+  #btn-coffee{background:#4a2f1d;color:#ffd9a0;border:2px solid #c98a3f}
+  #btn-shout{background:#3d0b1e;color:#ffb3c1;border:2px solid #ff4d6d}
+  #btn-coffee:disabled,#btn-shout:disabled{filter:grayscale(1);opacity:.55;cursor:wait}
+  #combo-badge{position:fixed;top:86px;right:12px;z-index:11;display:none;background:linear-gradient(180deg,#ffd23f,#ff7a00);color:#222;font-weight:800;border-radius:12px;padding:8px 14px;box-shadow:0 6px 20px rgba(0,0,0,.5);border:2px solid #fff}
+  #combo-badge.show{display:block;animation:cardIn .25s ease}
+  #powers-bar{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:10;font-size:12px;font-weight:800}
+  #powers-bar span{background:rgba(10,10,25,.85);border:1px solid #4448a0;padding:4px 10px;border-radius:99px;color:#dfe1ff}
+  .bar.crit{animation:blink .5s infinite alternate}
+  #actions{flex-wrap:wrap;justify-content:center;max-width:96vw}
+  #event-wrap .stack-note{font-family:'Press Start 2P';font-size:9px;color:#ff8fa3;text-shadow:0 2px 0 #000;background:rgba(0,0,0,.5);border-radius:8px;padding:5px 8px;pointer-events:none}
+  #event-card.stacked + #event-card.stacked{transform:scale(.97)}
+  .head-label{font-family:'Press Start 2P';font-size:8px;color:#fff;text-shadow:0 2px 0 #000;text-align:center;pointer-events:none}
+  #chaos{margin-top:6px;font-size:11px;font-weight:800;padding:4px 8px;border-radius:99px;display:inline-block}
+  #chaos.lv1{background:#1d7a4f;color:#fff}#chaos.lv2{background:#b58900;color:#fff}#chaos.lv3{background:#e76f00;color:#fff}#chaos.lv4{background:#d90429;color:#fff;animation:blink .7s infinite alternate}#chaos.lv5{background:#000;color:#ff4d6d;border:2px solid #ff4d6d;animation:blink .4s infinite alternate}
+  @keyframes blink{from{transform:scale(1)}to{transform:scale(1.08)}}
+  body.alarm-flash{animation:alarmBg .5s 8 alternate}
+  @keyframes alarmBg{from{box-shadow:inset 0 0 0 0 rgba(255,0,0,0)}to{box-shadow:inset 0 0 180px 40px rgba(255,30,30,.55)}}
+  #end-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+  .stat{background:#0f1126;border-radius:12px;padding:12px;text-align:center}
+  .stat b{font-size:22px;display:block}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vignette"></div>
+
+<div id="hud">
+  <div class="card" id="timer-card">
+    <div id="timer" class="pix">10:00</div>
+    <div id="day-label">⏱️ CLASSROOM SURVIVAL</div>
+    <div style="font-size:12px;margin-top:4px" id="class-info">6ºB • 18 alumn@s</div>
+    <div><span id="chaos" class="lv1">😌 CAOS Lv.1 · Calma tensa</span></div>
+  </div>
+  <div class="card"><div class="bar-label"><span>📚 Conocimiento</span><span id="v-con">0%</span></div><div class="bar" id="b-con"><i></i></div></div>
+  <div class="card"><div class="bar-label"><span>😡 Estrés</span><span id="v-est">0%</span></div><div class="bar" id="b-est"><i></i></div></div>
+  <div class="card"><div class="bar-label"><span>😰 Ansiedad</span><span id="v-ans">0%</span></div><div class="bar" id="b-ans"><i></i></div></div>
+  <div class="card"><div class="bar-label"><span>🧠 Salud mental</span><span id="v-sal">100%</span></div><div class="bar" id="b-sal"><i></i></div></div>
+</div>
+
+<div id="toast"></div>
+<div id="log"></div>
+
+<div id="combo-badge" class="pix">👁️ COMBO x2</div>
+<div id="powers-bar"></div>
+<div id="actions">
+  <button class="btn" id="btn-teach">📚 DAR CLASE (espacio)</button>
+  <button class="btn" id="btn-breathe">☕ RESPIRAR</button>
+  <button class="btn" id="btn-coffee" title="Ansiedad -35 de golpe, pero 30s de tembleque: enseñas peor. CD 90s (tecla 1)">☕ CAFÉ (1)</button>
+  <button class="btn" id="btn-shout" title="Silencio total 10s, pero luego rebote de caos x2 durante 20s. CD 120s (tecla 2)">📢 TRUENO (2)</button>
+  <button class="btn" id="btn-pause">⏸️</button>
+  <button class="btn" id="btn-help" title="Manual de supervivencia">❓</button>
+  <button class="btn on" id="btn-sound" title="Efectos de sonido">🔊</button>
+  <button class="btn on" id="btn-music" title="Música de fondo">🎵</button>
+</div>
+<div id="hint">🖱️ Click en díscolo = mirada fulminante (¡encadena COMBO!) • Arrastra para mirar<br>🔍 Zoom: <input type="range" id="zoom" min="4" max="16" step="0.5" value="14"> <span id="zoom-val">x14.0</span> <span style="opacity:.7">(rueda o teclas +/−)</span></div>
+
+<div id="event-wrap">
+  <div id="event-card">
+    <div id="event-head"><div id="event-emoji">😱</div><div><div id="event-title">EVENTO</div><div id="event-sub">Aula 6ºB • 10:23</div></div></div>
+    <div id="event-timerbar"><i id="event-timefill"></i></div>
+    <div id="event-desc"></div>
+    <div id="event-opts"></div>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div class="screen hidden" id="help-screen">
+  <div class="panel">
+    <div class="panel-hero"><h1>❓ MANUAL DE SUPERVIVENCIA</h1><p>Para docentes interinos sin padrino en el sindicato.</p></div>
+    <div class="panel-body">
+      <div class="satire">🎯 <b>Objetivo:</b> aguanta la jornada. Solo el <b>1%</b> llega al minuto 50 y sale por la puerta con la alarma. El caos escala: cada vez más eventos y <b>hasta 3 a la vez</b>.</div>
+      <div class="satire">👁️ <b>Mirada fulminante:</b> clic en un alumno alterado lo calma. Encadena clics en menos de 3.5s para <b>COMBO x2…x9</b> (a x3+ se sienta de golpe). ⚠️ No señales a inocentes: rompe el combo y sube ansiedad.</div>
+      <div class="satire">☕ <b>Café (tecla 1, CD 90s):</b> ansiedad −35 al instante, pero 30s de tembleque enseñando al 60%.<br>📢 <b>Voz de trueno (tecla 2, CD 120s):</b> 10s de silencio total... y después 20s de <b>rebote x2</b>.</div>
+      <div class="satire">😈 <b>Repetidor</b> (gorra roja): lía 3 veces más.<br>🌟 <b>Delegada</b> (insignia azul): clícala en calma para ganar su confianza. Con <b>3+</b> calma ella sola una crisis cada 25s.<br>💙 <b>Alumnado NEAE</b> (diadema): su evento los busca a ellos; mientras estén tranquilos, enseñas un 10% mejor.</div>
+      <div class="satire">🧹 Los <b>papeles del suelo</b> restan hasta un 30% al enseñar y los <b>charcos</b> dan estrés pasivo. La buena opción de la guerra de papel manda a recoger.<br>📚 <b>Espacio</b> = dar clase · <b>1/2</b> = poderes · Ojo que tiembla / pecho que aprieta / estrellitas = aviso al 75%.</div>
+      <button class="btn" id="help-close" style="background:#ffd23f;padding:14px">✔ VOLVER AL INFIERNO</button>
+    </div>
+  </div>
+</div>
+
+<!-- START SCREEN -->
+<div class="screen" id="start-screen">
+  <div class="panel">
+    <div class="panel-hero">
+      <h1>🏫 CLASSROOM<br>SURVIVAL</h1>
+      <p><i>"Total, si los profes no hacen nada, tienen 3 meses de vacaciones..."</i> — Cuñao medio español. Hoy vas a comprobarlo.</p>
+    </div>
+    <div class="panel-body">
+      <div class="satire">🎮 <b>MODO IMPOSIBLE ☠️.</b> Solo el <b>1%</b> llega al minuto 50 y sale por la puerta con la alarma. El caos <b>escala sin piedad</b>: cada vez más eventos y <b>hasta 3 crisis a la vez</b>. Eres docente en España. 25 criaturas con energía nuclear, una pizarra que falla, un proyector del 2007 y padres que te escriben por WhatsApp a las 23:47. <b>Da clase, mantén la cordura</b> y evita que la sala de profes haga apuestas sobre tu baja.</div>
+      <div class="row">
+        <div><label>Nombre del docente</label><input type="text" id="inp-name" value="Profe García" maxlength="20"></div>
+        <div><label>Elige tu avatar</label><div class="seg" id="seg-avatar">
+          <button data-v="m" class="sel">👨‍🏫 Profe</button><button data-v="f">👩‍🏫 Profa</button>
+        </div></div>
+      </div>
+      <div><label>Nº de alumnos: <span id="al-val" style="color:#ffd23f">18</span> <span style="opacity:.6">(más alumnos = más caos = más dificultad)</span></label>
+        <input type="range" id="inp-alumnos" min="6" max="30" value="18" step="1"></div>
+      <div><label>Duración de la partida (máx 50 min reales... ¿sobrevivirás?)</label><div class="seg" id="seg-time">
+        <button data-v="5">5 min ⚡</button><button data-v="10" class="sel">10 min ☕</button><button data-v="15">15 min 📚</button><button data-v="25">25 min 🔥</button><button data-v="50">50 min 💀</button>
+      </div></div>
+      <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">
+        <button id="start-btn">▶ EMPEZAR LA CLASE</button>
+        <button id="btn-controls">🎮<br>CONTROLES</button>
+      </div>
+      <div style="font-size:12px;opacity:.6;text-align:center">Minimalista • Pixel-Art 3D en tiempo real • Three.js • Haz clic en alumnos para calmarlos • Espacio = dar clase</div>
+    </div>
+  </div>
+</div>
+
+<!-- END SCREEN -->
+<div class="screen hidden" id="end-screen">
+  <div class="panel">
+    <div class="panel-hero" id="end-hero"><h1 id="end-title">FIN</h1><p id="end-sub"></p></div>
+    <div class="panel-body">
+      <div id="end-stats"></div>
+      <div class="satire" id="end-joke"></div>
+      <button id="start-btn2" class="btn" style="background:#ffd23f;padding:16px">🔁 REPETIR CURSO (reintentar)</button>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ============ ESTADO ============ */
+const S = {
+  playing:false, paused:false,
+  name:'Profe García', avatar:'m',
+  nAlumnos:18, durationMin:10, timeLeft:600,
+  con:0, est:15, ans:10, sal:100,
+  teachCD:0, breatheCD:0, eventCD:4, exiting:false, exitT:0,
+  combo:0, comboT:0, bestCombo:0,
+  coffeeCD:0, coffeeT:0, shoutCD:0, silenceT:0, reboundT:0, deleCD:20, deleTrust:0,
+  warn75:{est:false,ans:false,sal:false}, slowmoT:0, focusT:0, focusP:null,
+  activeEvents:[], // disruptions vivas
+  totalEvents:0, resolved:0, clicks:0, lessons:0,
+  elapsed:0
+};
+let avatar='m', durMin=10;
+
+/* ============ UI START ============ */
+document.querySelectorAll('#seg-avatar button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#seg-avatar button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');avatar=b.dataset.v;
+  // El nombre por defecto sigue al avatar: si no lo personalizaste, cambia "Profe García" <-> "Profa García"
+  const inp=document.getElementById('inp-name');
+  if(inp&&(inp.value==='Profe García'||inp.value==='Profa García'))inp.value=avatar==='f'?'Profa García':'Profe García';});
+// Quita un posible "Profe/Profa" tecleado a mano para no duplicar el tratamiento ("Profa. Profe García")
+function cleanDocente(v){return String(v||'').replace(/^\s*(profe\.?|profa\.?)\s+/i,'').trim()||'García';}
+document.querySelectorAll('#seg-time button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#seg-time button').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');durMin=+b.dataset.v;});
+document.getElementById('inp-alumnos').oninput=e=>document.getElementById('al-val').textContent=e.target.value;
+
+/* ============ THREE SETUP ============ */
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0e0f1a);
+scene.fog=new THREE.Fog(0x0e0f1a,18,36);
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,100);
+camera.position.set(0,7,11.5);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.target.set(0,0.9,-1); controls.maxPolarAngle=1.45; controls.minDistance=4; controls.maxDistance=16; controls.enablePan=false;
+function clampCamera(){camera.position.x=Math.max(-10,Math.min(10,camera.position.x));camera.position.y=Math.max(1,Math.min(10,camera.position.y));camera.position.z=Math.max(-5.0,Math.min(13,camera.position.z));}
+/* --- Zoom: slider + rueda + teclas --- */
+const zoomSlider=document.getElementById('zoom'),zoomVal=document.getElementById('zoom-val');
+function setZoom(d){d=Math.max(4,Math.min(16,d));const dir=camera.position.clone().sub(controls.target);const l=dir.length()||1;dir.divideScalar(l);camera.position.copy(controls.target).addScaledVector(dir,d);clampCamera();if(zoomSlider)zoomSlider.value=d.toFixed(1);if(zoomVal)zoomVal.textContent='x'+d.toFixed(1);}
+if(zoomSlider)zoomSlider.addEventListener('input',e=>setZoom(+e.target.value));
+controls.addEventListener('change',()=>{const d=camera.position.distanceTo(controls.target);if(zoomSlider&&document.activeElement!==zoomSlider)zoomSlider.value=d.toFixed(1);if(zoomVal)zoomVal.textContent='x'+d.toFixed(1);});
+addEventListener('keydown',e=>{if(e.key==='+'||e.key==='=')setZoom(camera.position.distanceTo(controls.target)-1.2);else if(e.key==='-'||e.key==='_')setZoom(camera.position.distanceTo(controls.target)+1.2);});
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x334,0.85));
+const sun=new THREE.DirectionalLight(0xfff2cc,1.6); sun.position.set(6,10,4); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); scene.add(sun);
+const projLight=new THREE.SpotLight(0xbfe9ff,0,20,0.5,0.4); projLight.position.set(0,4.4,1); scene.add(projLight); scene.add(projLight.target);
+
+function box(w,h,d,c,x=0,y=0,z=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color:c,roughness:.85}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;return m;}
+
+/* --- Aula --- */
+const room=new THREE.Group(); scene.add(room);
+const floor=new THREE.Mesh(new THREE.BoxGeometry(14,0.2,11),new THREE.MeshStandardMaterial({color:0xc9a06a,roughness:.9}));
+floor.position.y=-0.1; floor.receiveShadow=true; room.add(floor);
+// cuadrícula parquet
+for(let i=-6;i<=6;i++){const l=box(0.04,0.01,11,i%2?0xb98f5c:0xc9a06a,i,0.005,0);l.castShadow=false;room.add(l);}
+const wallC=0xe8e4da;
+const backW=box(14,4.5,0.3,wallC,0,2.25,-5.5); room.add(backW);
+const frontW=box(14,4.5,0.3,wallC,0,2.25,5.5); room.add(frontW);
+const leftW=box(0.3,4.5,11,0xdcd6c8,-7,2.25,0); room.add(leftW);
+const rightW=box(0.3,4.5,11,wallC,7,2.25,0); room.add(rightW);
+const ceil=box(14,0.2,11,0xf3f0e8,0,4.5,0); room.add(ceil);
+// Vista diorama: sin techo ni pared frontal para ver TODA la clase de un vistazo
+frontW.visible=false; ceil.visible=false;
+room.traverse(o=>{if(o.userData.front)o.visible=false;});
+// zócalo
+room.add(box(14,0.3,0.32,0x3b4a6b,0,0.15,-5.48));
+
+// Pizarra
+const piz=box(7,2,0.15,0x1f7a4d,0,2.2,-5.3); room.add(piz);
+room.add(box(7.4,2.4,0.08,0x8a6b3d,0,2.2,-5.38));
+const chalkTxt=makeTextSprite('2+2=¿4?  ¡SILENCIO!  Examen viernes',(c)=>{});
+chalkTxt.position.set(0,2.25,-5.2); chalkTxt.scale.set(6,1.1,1); room.add(chalkTxt);
+// Mesa profe
+const tDesk=new THREE.Group(); tDesk.add(box(2.4,0.12,1,0x7a5230,0,0.95,0)); tDesk.add(box(2.2,0.85,0.85,0x5d3f24,0,0.48,0));
+tDesk.add(box(0.7,0.45,0.05,0x222831,-0.5,1.3,-0.1)); // portátil
+tDesk.add(box(0.3,0.35,0.4,0xffd23f,0.7,1.2,0.1)); // taza / papeles
+tDesk.position.set(-1.5,0,3.2); room.add(tDesk);
+// Proyector colgando + cono
+room.add(box(0.1,1,0.1,0x333,0,4,1)); const proj=box(0.9,0.3,0.7,0x222831,0,3.4,1); room.add(proj);
+const cone=new THREE.Mesh(new THREE.ConeGeometry(1.4,3.5,24,1,true),new THREE.MeshBasicMaterial({color:0xbfe9ff,transparent:true,opacity:0.10,side:THREE.DoubleSide}));
+cone.position.set(0,2.2,-1.2); cone.rotation.x=-1.05; room.add(cone);
+const screenP=box(3,1.8,0.08,0xf4faff,1.8,2.4,-5.28); room.add(screenP);
+// Ventanas izquierda + cortinas que se mueven con la corriente
+const curtains=[];
+for(let i=0;i<3;i++){const w=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.8,1.8),new THREE.MeshStandardMaterial({color:0xbfe9ff,emissive:0x9fd8ff,emissiveIntensity:.7}));w.position.set(-6.85,2.6,-3+i*2.6);room.add(w);room.add(box(0.12,0.12,2,0xffffff,-6.85,3.55,-3+i*2.6));room.add(box(0.12,0.12,2,0xffffff,-6.85,1.65,-3+i*2.6));
+  const cz=-3+i*2.6;
+  [-1.05,1.05].forEach(off=>{const cu=new THREE.Mesh(new THREE.PlaneGeometry(0.5,2.1),new THREE.MeshStandardMaterial({color:0xff6fb5,side:THREE.DoubleSide}));cu.position.set(-6.6,2.6,cz+off);cu.rotation.y=Math.PI/2;cu.userData.baseZ=cz+off;cu.userData.ph=Math.random()*6;room.add(cu);curtains.push(cu);});}
+// Puerta derecha (batiente que se abre cuando llaman)
+const doorMesh=box(0.15,3,1.4,0x9a6b3f,6.9,1.5,3.8);room.add(doorMesh);let doorOpenT=0;
+// Papelera
+const bin=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.28,0.6,12),new THREE.MeshStandardMaterial({color:0x3a3f5c}));bin.position.set(5.8,0.3,3.6);bin.castShadow=true;room.add(bin);
+// Reloj
+const clock=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.4,0.1,20),new THREE.MeshStandardMaterial({color:0xffffff}));clock.rotation.x=Math.PI/2;clock.position.set(-3,3.8,-5.3);room.add(clock);
+// Pósters
+function poster(txt,color,x){const m=box(1.4,1.8,0.06,color,x,2.4,5.32);m.userData.front=true;room.add(m);const s=makeTextSprite(txt);s.position.set(x,2.4,5.24);s.scale.set(1.3,0.7,1);s.rotation.y=Math.PI;s.userData.front=true;room.add(s);}
+poster('TABLA\n×1 ×2 ×3',0xffd23f,-4); poster('RESPETA\nAL PROFE',0x3ff2c4,0); poster('¡LEE!',0xff9f1c,4);
+
+function makeTextSprite(text){
+  const cv=document.createElement('canvas');cv.width=512;cv.height=128;const g=cv.getContext('2d');
+  g.fillStyle='rgba(0,0,0,0)';g.fillRect(0,0,512,128);g.fillStyle='#fff';g.font='bold 44px monospace';g.textAlign='center';g.textBaseline='middle';
+  const lines=String(text).split('\n');lines.forEach((l,i)=>g.fillText(l,256,64+(i-(lines.length-1)/2)*50));
+  const t=new THREE.CanvasTexture(cv);const m=new THREE.SpriteMaterial({map:t,transparent:true});
+  return new THREE.Sprite(m);
+}
+function emojiSprite(e){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d');g.font='90px serif';g.textAlign='center';g.textBaseline='middle';g.fillText(e,64,70);const t=new THREE.CanvasTexture(cv);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));s.scale.set(0.9,0.9,1);return s;}
+
+/* --- Personajes voxel pixel-art --- */
+const SKIN=[0xf5cba7,0xe8a87c,0xc68642,0x8d5524,0xffdbac];
+const SHIRT=[0xff5d5d,0x3fa7ff,0x7CFC6b,0xffd23f,0xc084fc,0xff9f1c,0x3ff2c4,0xff6fb5];
+const HAIR=[0x222222,0x5a3a1a,0xffd23f,0xff6a00,0x7a2e00,0xcccccc];
+function makeKid(){
+  const g=new THREE.Group();
+  const skin=SKIN[Math.floor(Math.random()*SKIN.length)],shirt=SHIRT[Math.floor(Math.random()*SHIRT.length)],hair=HAIR[Math.floor(Math.random()*HAIR.length)];
+  const body=box(0.55,0.6,0.35,shirt,0,0.75,0);g.add(body);
+  const head=box(0.45,0.45,0.45,skin,0,1.28,0);g.add(head);
+  g.add(box(0.47,0.15,0.47,hair,0,1.5,0)); // pelo
+  const eM=new THREE.MeshBasicMaterial({color:0x111111});
+  const e1=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.08,0.02),eM);e1.position.set(-0.1,1.3,0.23);g.add(e1);
+  const e2=e1.clone();e2.position.x=0.1;g.add(e2);
+  g.add(box(0.12,0.05,0.02,0x7a2e2e,0,1.15,0.23)); // boca
+  g.add(box(0.14,0.5,0.14,skin,-0.36,0.75,0));g.add(box(0.14,0.5,0.14,skin,0.36,0.75,0)); // brazos
+  g.userData={body,head,shirt,phase:Math.random()*6,baseY:0,mood:'ok',bubble:null,bubbleT:0,standT:0,walk:null};
+  return g;
+}
+function makeDesk(){
+  const g=new THREE.Group();
+  // Mesa DELANTE del alumno (lado pizarra, -z)
+  g.add(box(0.9,0.08,0.65,0xd9b382,0,0.62,-0.75));
+  g.add(box(0.85,0.5,0.55,0xb58e5a,0,0.3,-0.75));
+  // Silla DETRAS: asiento bajo el alumno y espaldar a su espalda (+z)
+  g.add(box(0.5,0.08,0.5,0x8a6b3d,0,0.45,0.1)); // asiento
+  g.add(box(0.5,0.55,0.08,0x8a6b3d,0,0.75,0.38)); // espaldar
+  return g;
+}
+
+/* --- Teacher --- */
+const teacher=new THREE.Group();
+(function(){
+  const isF=()=>S.avatar==='f';
+  const skin=0xf5cba7;
+  teacher.add(box(0.6,0.9,0.4,isF()?0xc084fc:0x2f6fed,0,1.05,0));
+  teacher.add(box(0.5,0.5,0.5,skin,0,1.75,0));
+  teacher.add(box(0.52,0.22,0.52,isF()?0x5a3a1a:0x222222,0,2.05,0));
+  // ojos gafas profe
+  teacher.add(box(0.55,0.12,0.05,0x111111,0,1.78,0.26));
+  teacher.add(box(0.16,0.6,0.16,skin,-0.4,1.05,0));
+  teacher.add(box(0.16,0.6,0.16,skin,0.4,1.05,0));
+  teacher.add(box(0.22,0.7,0.22,0x333,-0.18,0.35,0));
+  teacher.add(box(0.22,0.7,0.22,0x333,0.18,0.35,0));
+})();
+teacher.position.set(0.5,0,2.4); scene.add(teacher);
+let teachBob=0;
+
+/* --- Marcadores: anillo en suelo + 3 ICONOS 3D sobre la cabeza ---
+   Icono 0 = opcion A (click = elegir), Icono 1 = opcion B, Icono 2 = evento + urgencia.
+   Asi no hay cartel grande: miras al alumno, ves 3 iconos flotando y clicas uno. */
+const markers=new Map();
+function createMarker(kid){
+  const ring=new THREE.Mesh(new THREE.RingGeometry(0.42,0.6,28),new THREE.MeshBasicMaterial({color:0xff2244,transparent:true,opacity:0.85,side:THREE.DoubleSide}));
+  ring.rotation.x=-Math.PI/2;ring.position.set(kid.userData.seat.x,0.03,kid.userData.seat.z);scene.add(ring);
+  const arrow=new THREE.Mesh(new THREE.ConeGeometry(0.2,0.45,4),new THREE.MeshBasicMaterial({color:0xff2244}));
+  arrow.rotation.x=Math.PI;arrow.position.set(0,2.75,0);arrow.visible=false;kid.add(arrow);
+  return {ring,arrow,phase:Math.random()*6,head:null};
+}
+function removeMarker(kid){const mk=markers.get(kid);if(mk){scene.remove(mk.ring);kid.remove(mk.arrow);if(mk.head){kid.remove(mk.head.group);}markers.delete(kid);}}
+function firstEmoji(s){const m=String(s||'').match(/^[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{200D}]+/u);if(m)return m[0];return String(s||'?').trim().split(/\s+/)[0].slice(0,4);}
+function makeIconSprite(emoji,bg){
+  const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d');
+  if(bg){g.fillStyle=bg;g.beginPath();g.arc(64,64,58,0,7);g.fill();g.lineWidth=6;g.strokeStyle='#fff';g.stroke();}
+  g.font='72px serif';g.textAlign='center';g.textBaseline='middle';g.fillText(emoji,64,70);
+  const t=new THREE.CanvasTexture(cv);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));
+  s.scale.set(0.62,0.62,1);return s;
+}
+function setIconEmoji(sprite,emoji,bg){
+  const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d');
+  if(bg){g.fillStyle=bg;g.beginPath();g.arc(64,64,58,0,7);g.fill();g.lineWidth=6;g.strokeStyle='#fff';g.stroke();}
+  g.font='72px serif';g.textAlign='center';g.textBaseline='middle';g.fillText(emoji,64,70);
+  const t=new THREE.CanvasTexture(cv);
+  sprite.material.map.dispose();sprite.material.map=t;sprite.material.needsUpdate=true;
+}
+// Construye / refresca los 3 iconos de un modal sobre su alumno
+function syncHeadIcons(){
+  modalStack.forEach(item=>{
+    let mk=markers.get(item.kid);if(!mk){mk=createMarker(item.kid);markers.set(item.kid,mk);}
+    const aE=firstEmoji(item.ev.opts[0]?item.ev.opts[0].l:'✅');
+    const bE=firstEmoji(item.ev.opts[1]?item.ev.opts[1].l:'❌');
+    if(!mk.head){
+      const group=new THREE.Group();group.position.set(0,2.15,0);
+      const bg=document.createElement('canvas'); // invisible hit area not needed; sprites raycastables
+      const sA=makeIconSprite(aE,'#2ecc71');sA.position.set(-0.7,0,0);
+      const sB=makeIconSprite(bE,'#e74c3c');sB.position.set(0.7,0,0);
+      const sC=makeIconSprite(item.ev.e,'#23264a');sC.position.set(0,0.72,0);sC.scale.set(0.8,0.8,1);
+      sA.userData.headAction={itemId:item.id,opt:0};sB.userData.headAction={itemId:item.id,opt:1};sC.userData.headAction={itemId:item.id,opt:-1};
+      group.add(sA);group.add(sB);group.add(sC);
+      // mini barra de tiempo bajo los iconos (plano que encoge)
+      const barBg=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.12),new THREE.MeshBasicMaterial({color:0x111111,transparent:true,opacity:0.8,depthTest:false}));
+      barBg.position.set(0,-0.42,0);group.add(barBg);
+      const barFg=new THREE.Mesh(new THREE.PlaneGeometry(1.5,0.12),new THREE.MeshBasicMaterial({color:0x3ff2c4,transparent:true,opacity:0.95,depthTest:false}));
+      barFg.position.set(0,-0.42,0.001);group.add(barFg);
+      item.kid.add(group);
+      mk.head={group,sA,sB,sC,barFg,aE,bE,evE:item.ev.e,urg:'x'};
+    } else {
+      if(mk.head.aE!==aE){setIconEmoji(mk.head.sA,aE,'#2ecc71');mk.head.aE=aE;}
+      if(mk.head.bE!==bE){setIconEmoji(mk.head.sB,bE,'#e74c3c');mk.head.bE=bE;}
+      if(mk.head.evE!==item.ev.e){setIconEmoji(mk.head.sC,item.ev.e,'#23264a');mk.head.evE=item.ev.e;}
+      mk.head.sA.userData.headAction={itemId:item.id,opt:0};
+      mk.head.sB.userData.headAction={itemId:item.id,opt:1};
+      mk.head.sC.userData.headAction={itemId:item.id,opt:-1};
+    }
+  });
+  // Limpia grupos huerfanos (modal resuelto/caducado)
+  markers.forEach((mk,kid)=>{
+    if(mk.head&&!modalStack.some(m=>m.kid===kid)){kid.remove(mk.head.group);mk.head=null;}
+  });
+}
+/* --- Movimiento: los alumnos SE MUEVEN de verdad ---
+   walk = {tx,tz,dur,t,cb} ; en el loop se interpola con saltitos y giro. */
+function walkKidTo(kid,tx,tz,dur=3,cb=null){
+  kid.userData.walk={fx:kid.position.x,fz:kid.position.z,tx,tz,dur,t:0,cb};
+}
+function kidBackToSeat(kid,dur=2.5){
+  const s=kid.userData.seat;walkKidTo(kid,s.x,s.z,dur,()=>{kid.rotation.y=Math.PI;});
+}
+// Visitante de puerta (delegado / jefe / padres): entra, espera, se va al resolver
+let visitor=null, visitorT=0;
+function spawnVisitor(emoji='🧑‍💼'){
+  despawnVisitor();
+  const g=new THREE.Group();
+  g.add(box(0.55,0.7,0.35,0x444a6b,0,0.85,0));
+  g.add(box(0.45,0.45,0.45,0xf5cba7,0,1.5,0));
+  g.add(box(0.47,0.15,0.47,0x333333,0,1.72,0));
+  const s=emojiSprite(emoji);s.position.set(0,2.2,0);g.add(s);
+  g.position.set(6.4,0,3.8);g.rotation.y=-Math.PI/2;g.userData.bubble=s;
+  scene.add(g);visitor=g;visitorT=0;
+  // la puerta "se abre": el visitante da un paso dentro
+  walkCharTo(g,5.4,3.4,1.6);
+}
+function despawnVisitor(){if(visitor){scene.remove(visitor);visitor=null;}}
+function walkCharTo(ch,tx,tz,dur=1.6,cb=null){ch.userData.walk={fx:ch.position.x,fz:ch.position.z,tx,tz,dur,t:0,cb};}
+// Balon que entra por la ventana izquierda con parabola real
+const flyBalls=[];
+function flyBallIn(){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(0.22,12,12),new THREE.MeshStandardMaterial({color:0xffffff}));
+  m.position.set(-6.6,2.6,-1.5);scene.add(m);
+  flyBalls.push({mesh:m,t:0,dur:1.1,fx:-6.6,fy:2.6,fz:-1.5,tx:1+Math.random()*2,ty:0.25,tz:0.5+Math.random()*2});
+  SFX.paper();
+}
+// Cortinas + viento: se abren con corriente cuando se ventila / entra balon
+let windowOpenT=0, windParts=[];
+function openWindows(sec=10){
+  windowOpenT=Math.max(windowOpenT,sec);
+  for(let i=0;i<14;i++){
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(0.12,0.12),new THREE.MeshBasicMaterial({color:0xbfe9ff,transparent:true,opacity:0.8}));
+    m.position.set(-6.2+Math.random(),2+Math.random()*1.6,-3+Math.random()*5);
+    scene.add(m);windParts.push({mesh:m,vel:new THREE.Vector3(2+Math.random()*2,(Math.random()-0.5)*1,(Math.random()-0.5)*2),life:sec*0.5});
+  }
+  SFX.chalk();
+}
+function syncMarkers(){
+  if(!S.playing||S.exiting){markers.forEach((mk,k)=>removeMarker(k));return;}
+  kids.forEach(k=>{
+    const isModal=modalStack.some(m=>m.kid===k);
+    const isActive=S.activeEvents.includes(k)||k.userData.mood!=='ok';
+    if(!isModal&&!isActive){if(markers.has(k))removeMarker(k);return;}
+    let mk=markers.get(k);
+    if(!mk){mk=createMarker(k);markers.set(k,mk);}
+    mk.ring.material.color.setHex(isModal?0xff2244:0xff9f1c);
+    mk.arrow.material.color.setHex(isModal?0xff2244:0xff9f1c);
+  });
+}
+function focusKid(id){const it=modalStack.find(m=>m.id===id);if(!it)return;S.focusP=new THREE.Vector3(it.kid.userData.seat.x,1.0,it.kid.userData.seat.z);S.focusT=1.2;SFX.ui();toast('🎯 '+it.kid.userData.name+' — ¡ahí está, sigue el anillo!');}
+/* --- Alumnos: crear pupitres --- */
+let kids=[], desksG=new THREE.Group(); scene.add(desksG);
+const paperBalls=[];
+function buildClass(n){
+  while(desksG.children.length)desksG.remove(desksG.children[0]);
+  kids=[];paperBalls.forEach(p=>scene.remove(p.mesh));paperBalls.length=0;markers.forEach((mk,k)=>removeMarker(k));
+  despawnVisitor();flyBalls.forEach(b=>scene.remove(b.mesh));flyBalls.length=0;windParts.forEach(w=>scene.remove(w.mesh));windParts.length=0;windowOpenT=0;doorOpenT=0;
+  const cols=Math.ceil(Math.sqrt(n*1.4)), rows=Math.ceil(n/cols);
+  let idx=0;
+  for(let r=0;r<rows&&idx<n;r++)for(let c=0;c<cols&&idx<n;c++){
+    const x=(c-(cols-1)/2)*1.85, z=-1.6+r*1.75;
+    const d=makeDesk();d.position.set(x,0,z);desksG.add(d);
+    const k=makeKid();k.position.set(x,0.45,z+0.1);k.rotation.y=Math.PI; // miran a la pizarra (-z)
+    k.userData.seat=new THREE.Vector3(x,0.45,z+0.1);
+    k.userData.name=nombres[idx%nombres.length]+' '+(idx+1);
+    k.userData.role=null;k.userData.trust=0;
+    desksG.add(k);kids.push(k);idx++;
+  }
+  // --- Personalidades: repetidor (lia 3x mas), delegada (ayuda), NEAE (bonus sistemico) ---
+  const shuffled=[...kids].sort(()=>Math.random()-0.5);
+  if(shuffled[0]){shuffled[0].userData.role='repe';const cap=box(0.5,0.12,0.5,0xd90429,0,1.62,0);shuffled[0].add(cap);shuffled[0].userData.name='😈 '+shuffled[0].userData.name+' (repe)';}
+  if(shuffled[1]){shuffled[1].userData.role='dele';const badge=box(0.16,0.16,0.05,0x00c2ff,0.22,1.05,0.22);shuffled[1].add(badge);shuffled[1].userData.name='🌟 '+shuffled[1].userData.name+' (deleg.)';}
+  shuffled.slice(2,4).forEach(k=>{if(k){k.userData.role='neae';const b=box(0.5,0.08,0.5,0x3ff2c4,0,1.62,0);k.add(b);k.userData.name='💙 '+k.userData.name;}});
+  document.getElementById('class-info').textContent=`${S.avatar==='f'?'Profa.':'Profe'} ${S.name} • ${n} alumn@s`;
+}
+const nombres=['Hugo','Lucía','Martín','Sofía','Leo','Marta','Izan','Carmen','Eric','Alba','Pablo','Nora','Dani','Elena','Adrián','Julia','Mario','Aitana','Diego','Vega','Iván','Lara','Noa','Enzo','Mía','Gael','Laia','Bruno','Ariadna','Yusef'];
+
+/* --- Burbujas / FX --- */
+function setBubble(kid,emoji,dur=8){
+  clearBubble(kid);const s=emojiSprite(emoji);s.position.set(0,2.2,0);kid.add(s);kid.userData.bubble=s;kid.userData.bubbleT=dur;
+}
+function clearBubble(kid){if(kid.userData.bubble){kid.remove(kid.userData.bubble);kid.userData.bubble=null;}}
+function throwPaper(from){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(0.09,8,8),new THREE.MeshStandardMaterial({color:0xffffff}));
+  m.position.copy(from.position).add(new THREE.Vector3(0,1.2,0));scene.add(m);
+  paperBalls.push({mesh:m,vel:new THREE.Vector3((Math.random()-0.5)*4,3+Math.random()*2,(Math.random()-0.5)*4),life:6,landed:false});
+}
+/* --- Escombros persistentes: el aula se degrada de verdad --- */
+const floorDebris=[]; // {mesh,kind:'paper'|'puddle'|'gum'}
+const confetti=[];
+function capDebris(){
+  const papers=floorDebris.filter(d=>d.kind==='paper');
+  while(papers.length>40){const d=papers.shift();scene.remove(d.mesh);floorDebris.splice(floorDebris.indexOf(d),1);}
+  const puds=floorDebris.filter(d=>d.kind==='puddle');
+  while(puds.length>6){const d=puds.shift();scene.remove(d.mesh);floorDebris.splice(floorDebris.indexOf(d),1);}
+}
+function greenPuddle(pos){
+  const m=new THREE.Mesh(new THREE.CircleGeometry(0.42,16),new THREE.MeshStandardMaterial({color:0x6aff4d,roughness:1}));m.rotation.x=-Math.PI/2;m.position.set(pos.x+(Math.random()-0.5)*0.6,0.02+floorDebris.length*0.0004,pos.z+0.5);scene.add(m);
+  floorDebris.push({mesh:m,kind:'puddle'});capDebris();
+  log('🤮 El charco se queda ahí. Cada charco suma estrés pasivo...','#ff8fa3');
+}
+function gumSplat(pos){
+  const m=new THREE.Mesh(new THREE.CircleGeometry(0.16,10),new THREE.MeshStandardMaterial({color:0xff6fb5}));m.rotation.x=-Math.PI/2;m.position.set(pos.x+(Math.random()-0.5),0.02,pos.z+0.4);scene.add(m);
+  floorDebris.push({mesh:m,kind:'gum'});capDebris();
+}
+function dropFloorPaper(pos){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.02,0.16),new THREE.MeshStandardMaterial({color:0xf4f4f4}));
+  m.position.set(pos.x+(Math.random()-0.5)*2.5,0.03,pos.z+(Math.random()-0.5)*2.5);m.rotation.y=Math.random()*3;scene.add(m);
+  floorDebris.push({mesh:m,kind:'paper'});capDebris();
+}
+function clearSomeDebris(n){
+  for(let i=0;i<n&&floorDebris.length;i++){const d=floorDebris.shift();scene.remove(d.mesh);}
+}
+function spawnConfetti(origin,count=120){
+  for(let i=0;i<count;i++){
+    const c=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.09,0.02),new THREE.MeshBasicMaterial({color:[0xffd23f,0x3ff2c4,0xffffff,0xff6fb5,0x7CFC6b][i%5]}));
+    c.position.copy(origin).add(new THREE.Vector3(0,1.5,0));
+    scene.add(c);
+    confetti.push({mesh:c,vel:new THREE.Vector3((Math.random()-0.5)*7,4+Math.random()*6,(Math.random()-0.5)*7),rot:new THREE.Vector3(Math.random()*8,Math.random()*8,0),life:3.5});
+  }
+}
+
+/* ============ EVENTOS (humor español) ============ */
+const EVENTS=[
+ {e:'🤧',t:'¡ACHÍS! SÓNICO',d:()=>`Un alumno estornuda como un dragón. Toda la fila se gira. Otro grita "¡CUBRETE, QUE VIENE EL COVID 47!".`,opts:[
+   {l:'🙏 “¡Jesús!” y seguir',s:'Educación ante todo',fx:{con:1,est:1,ans:0,sal:1},r:'Dices “¡Jesús!”. El alumno te bendice de vuelta. Se sigue.'},
+   {l:'🪟 Abrir ventanas (corriente polar)',s:'Ventilar 5 min',fx:{con:-2,est:-4,ans:-3,sal:0},r:'Abres todo. Entra un frío siberiano. Los mocos se congelan. Ansiedad -.'}]},
+ {e:'😭',t:'LLANTO DESCONSOLADO',d:()=>`Una alumna llora porque "se le ha roto la goma con forma de unicornio". Drama nivel Goya.`,mood:'cry',opts:[
+   {l:'🫂 Consolar 1 minuto',s:'+salud, -ritmo',fx:{con:-2,est:2,ans:1,sal:4},r:'La abrazas con palabras. Te dibuja un corazón. Salud mental +.'},
+   {l:'😅 “No pasa nada, sigue copiando”',s:'Frío pero eficaz',fx:{con:1,est:3,ans:4,sal:-3},r:'Sigue llorando bajito. El unicornio no se olvida.'}]},
+ {e:'🚽',t:'“¿PUEDO IR AL BAÑO?” Nº 47',d:()=>`El de siempre pide ir al baño por 12ª vez. Sospechas que tiene una sede social allí.`,mood:'bath',opts:[
+   {l:'✅ Sí, ve',s:'Confianza',fx:{con:-2,est:-2,ans:-2,sal:1},r:'Va (y vuelve con olor a bocadillo). La clase respira.'},
+   {l:'❌ “Aguanta 5 minutos”',s:'Mano dura',fx:{con:1,est:4,ans:5,sal:-2},r:'Cruza las piernas como un flamenco. Tensión en el ambiente.'}]},
+ {e:'📄',t:'GUERRA DE BOLAS DE PAPEL',d:()=>`Dos alumnos se tiran bolas de papel. Una impacta en tu frente con precisión de francotirador.`,mood:'paper',opts:[
+   {l:'🧺 “El próximo a la papelera... ¡VOSOTROS!”',s:'Humor + autoridad · recogen el suelo',clean:15,fx:{con:0,est:2,ans:-2,sal:3},r:'Todos ríen. Recogen los papeles. El suelo respira. Punto para ti.'},
+   {l:'😡 Castigados sin recreo',s:'Mano dura',fx:{con:1,est:5,ans:6,sal:-4},r:'Protestan. “¡MI MADRE VA A VENIR!”. Ya tienes lío.'}]},
+ {e:'🫧',t:'CHICLE GLOBO XXL',d:()=>`Un alumno mastica chicle y hace un globo del tamaño de su cabeza. La clase contiene la respiración... ¡POP!`,mood:'gum',opts:[
+   {l:'😂 Reírte con ellos',s:'Complicidad',fx:{con:-1,est:-5,ans:-4,sal:5},r:'Te ríes. “Profe, es usted la mejor”. Estrés -.'},
+   {l:'🗑️ “A la papelera. AHORA”',s:'Norma',fx:{con:1,est:3,ans:2,sal:-1},r:'Lo pega debajo de la mesa. Ya tienes fósil para el arqueólogo.'}]},
+ {e:'🤮',t:'VÓMITO HISTÓRICO',d:()=>`Un alumno palidece y... ¡potencia! Vómito en mitad del pasillo. Olor a macarrones nivel tóxico.`,mood:'sick',opts:[
+   {l:'🚑 Llevarlo a enfermería + ventilar',s:'Protocolo',fx:{con:-4,est:6,ans:5,sal:-2},r:'Limpian con serrín. La clase no olvidará este día.'},
+   {l:'🧑‍🏫 “Que alguien avise al conserje, seguimos”',s:'Sangre fría',fx:{con:0,est:8,ans:7,sal:-5},r:'Héroe. Pero el olor se queda contigo para siempre.'}]},
+ {e:'😵',t:'DESMAYO EN PRIMERA FILA',d:()=>`Un alumno se desmaya (no desayunó, jugó al Fortnite hasta las 3am). Silencio total.`,mood:'faint',opts:[
+   {l:'🩺 Socorrer + llamar enfermería',s:'Lo correcto',fx:{con:-3,est:7,ans:6,sal:0},r:'Se recupera con un zumo. Te mira como a un héroe.'},
+   {l:'💨 “Que le dé el aire, seguid copiando”',s:'Templanza extrema',fx:{con:1,est:4,ans:8,sal:-4},r:'Funciona, pero tu corazón va a 180.'}]},
+ {e:'🧩',t:'ALUMNO NEAE NECESITA APOYO',d:()=>`Tu alumno NEAE necesita una adaptación en este momento: pictogramas, más tiempo y calma. La clase mira cómo actúas.`,mood:'neae',opts:[
+   {l:'💙 Adaptar y acompañar con calma',s:'Inclusión (bien hecho)',fx:{con:3,est:2,ans:-3,sal:6},r:'Le adaptas el ejercicio. Sonríe. Toda la clase aprende respeto. Salud +.'},
+   {l:'⏩ “Luego te atiendo, seguimos”',s:'Ignorar el momento',fx:{con:-2,est:5,ans:6,sal:-6},r:'Se frustra y se bloquea. Te sientes fatal. La culpa pesa.'}]},
+ {e:'🖊️',t:'BIC DE TINTA LÍQUIDA EXPLOTA',d:()=>`¡PLOF! Un boli de tinta líquida revienta. Manos, mesa y cara tatuadas de azul pitufo.`,opts:[
+   {l:'🧻 Repartir toallitas y reír',s:'Resolver',fx:{con:-2,est:-2,ans:-2,sal:3},r:'Parecen pitufos. Foto pal recuerdo (con permiso).'},
+   {l:'😤 “¿Quién ha sido? ¡A pagar la mesa!”',s:'Culpables',fx:{con:0,est:6,ans:5,sal:-3},r:'Nadie fue. El boli se suicidó solo, dicen.'}]},
+ {e:'🚪',t:'TOC-TOC EN LA PUERTA',mood:'door',d:()=>`Tocan a la puerta. Es el delegado de 6ºA: "¿Tenéis un cargador? ¿Y tijeras? ¿Y pegamento? ¿Y...?"`,opts:[
+   {l:'😊 Darle lo que pide',s:'Vecindad',fx:{con:-2,est:1,ans:0,sal:2},r:'Se va feliz. Tu clase aplaude tu bondad. Pierdes 2 min.'},
+   {l:'🙅 “¡Estamos en clase!”',s:'Frontera',fx:{con:0,est:3,ans:2,sal:0},r:'Cierras. Se oye “borde...”. Te afecta un poco.'}]},
+ {e:'📱',t:'SUENA UN MÓVIL: REGGAETÓN',d:()=>`Suena un móvil a todo volumen. Melodía: reggaetón del 2019. El dueño silba mirando al techo.`,opts:[
+   {l:'📦 “Al cajón de los móviles”',s:'Normativa',fx:{con:0,est:4,ans:1,sal:0},r:'Lo requisas. “¡ES DE MI MADRE!”. Drama contenido.'},
+   {l:'💃 Bailar 5 segundos y requisarlo',s:'Leyenda',fx:{con:-1,est:-4,ans:-3,sal:5},r:'Haces el pasito. La clase ENLOQUECE. Eres meme... pero feliz.'}]},
+ {e:'👪',t:'PADRES A RECOGER A UN ALUMNO',d:()=>`Llaman de secretaría: los padres de un alumno vienen a recogerlo porque "tiene dentista" (guiño: es viernes 12:00).`,mood:'door',opts:[
+   {l:'📝 Preparar tareas para casa',s:'Profesional',fx:{con:1,est:2,ans:0,sal:1},r:'Le das la ficha. Padres agradecidos. “¡Qué majo el profe!”.'},
+   {l:'🙄 “Otra vez... vale”',s:'Resignación',fx:{con:-1,est:3,ans:2,sal:-2},r:'Se va con la mochila bailando. Los demás quieren dentista también.'}]},
+ {e:'🧑‍💼',t:'EL JEFE DE ESTUDIOS INTERRUMPE',d:()=>`Entra el jefe de estudios sin avisar para dar un mensaje de 10 minutos sobre bocadillos en el patio. Tu clase: perdida.`,mood:'door',opts:[
+   {l:'🙂 Sonreír y ceder la palabra',s:'Supervivencia política',fx:{con:-3,est:3,ans:2,sal:0},r:'Sonríes. Por dentro gritas. Te debe un café.'},
+   {l:'⏱️ “¿Puedes ser breve? Estamos en examen”',s:'Valentía',fx:{con:0,est:6,ans:5,sal:-2},r:'Lo es. Pero te mira raro. Claustro tenso el lunes.'}]},
+ {e:'🗣️',t:'ALUMNO INTERRUMPE CADA 30 SEG',d:()=>`Un alumno comenta TODO: "profe, ¿esto entra? ¿y esto? ¿por qué el cielo es azul? ¿tienes novia?".`,mood:'talk',opts:[
+   {l:'🎯 Darle el rol de ayudante',s:'Judo pedagógico',fx:{con:2,est:-2,ans:-2,sal:3},r:'Le das la tiza. Se calma. ¡Genialidad docente!'},
+   {l:'🤫 “Chitón o parte”',s:'Autoridad',fx:{con:0,est:4,ans:3,sal:-2},r:'Se calla 4 minutos exactos. Cronometrado.'}]},
+ {e:'😱',t:'GRITO RANDOM',d:()=>`Un grito desgarrador sin motivo. Todos saltan. "¡Había una araña!". La araña: una mota de polvo.`,opts:[
+   {l:'🦸 Rescate heroico de la “araña”',s:'Humor',fx:{con:-1,est:-1,ans:-3,sal:2},r:'Atrapas el polvo en un papel. Ovación.'},
+   {l:'📏 “El próximo grito, dictado”',s:'Amenaza',fx:{con:1,est:3,ans:4,sal:-1},r:'Silencio sepulcral. Hasta el reloj hace ruido.'}]},
+ {e:'🧍',t:'SE LEVANTA Y PASEA',d:()=>`Un alumno se levanta y empieza a pasear por la clase como si fuera el Retiro. "Es que me duelen las piernas".`,mood:'walk',opts:[
+   {l:'🚶 “Pues reparte estas fichas paseando”',s:'Cintura',fx:{con:1,est:-2,ans:-1,sal:2},r:'Lo conviertes en auxiliar. Se sienta solo.'},
+   {l:'🪑 “Siéntate. YA”',s:'Orden',fx:{con:0,est:4,ans:3,sal:-1},r:'Se sienta de mala gana arrastrando la silla 3 km.'}]},
+ {e:'💬',t:'WHATSAPP DE MADRE A LAS 11:02',d:()=>`Te vibra el móvil: una madre pregunta por el grupo "¿Hoy hay deberes? ¿Y la excursión? ¿Mi hijo comió?". Son 14 mensajes.`,opts:[
+   {l:'📵 Silenciar y seguir',s:'Salud',fx:{con:1,est:-1,ans:-2,sal:2},r:'Silencias. Responderás a las 18:00 con paz.'},
+   {l:'✍️ Responder corriendo',s:'Ansiedad',fx:{con:-2,est:4,ans:6,sal:-3},r:'Respondes. Te manda 6 audios. Error crítico.'}]},
+ {e:'🔥',t:'INSPECCIÓN SORPRESA (¡tambores!)',d:()=>`Dirección asoma con cara de inspección. Te observa 2 minutos eternos mientras un alumno se hurga la nariz.`,opts:[
+   {l:'🎭 Sonreír y dar tu mejor clase',s:'Teatro',fx:{con:4,est:8,ans:9,sal:-3},r:'Bordas la explicación. Sudas como un pollo. Inspección: "bien".'},
+   {l:'😐 Actuar normal',s:'Naturalidad',fx:{con:2,est:4,ans:4,sal:0},r:'El de la nariz te arruina el “excelente”. Pero sobrevives.'}]},
+ {e:'⚽',t:'BALÓN PERDIDO ENTRA POR VENTANA',d:()=>`¡PAM! Un balón del patio entra por la ventana y derriba tus tizas. Gritos desde el patio: "¡PROFE, NUESTRO BALÓN!".`,mood:'ball',opts:[
+   {l:'🦵 Devolverlo de volea (épico)',s:'Leyenda del patio',fx:{con:-1,est:-4,ans:-3,sal:6},r:'Chutas. ¡Gol modosito! El patio corea tu nombre.'},
+   {l:'🔒 Confiscarlo hasta junio',s:'Villano',fx:{con:0,est:3,ans:2,sal:-2},r:'Llantos en el patio. Eres el Voldemort del recreo.'}]},
+ {e:'🥪',t:'OLOR A BOCADILLO CLANDESTINO',d:()=>`Huele a bocadillo de tortilla. Alguien come escondido. Se oyen mordiscos ninja.`,opts:[
+   {l:'👃 “Invita o decomiso”',s:'Humor',fx:{con:0,est:-2,ans:-2,sal:3},r:'Te da un trozo. Tortilla con cebolla. Debate nacional en clase.'},
+   {l:'🚫 “Guardad la comida”',s:'Norma',fx:{con:1,est:2,ans:1,sal:-1},r:'La guardan... para comérsela en tu explicación.'}]},
+ {e:'💩',t:'“PROFE, SE HA ESCAPADO UN PEDO”',d:()=>`Risas incontrolables. Acusaciones cruzadas. La Convención de Ginebra no contempla esto.`,opts:[
+   {l:'🪟 Abrir ventana y seguir como si nada',s:'Dignidad británica',fx:{con:0,est:-3,ans:-3,sal:4},r:'Ventilas. Nadie olvida, todos perdonan.'},
+   {l:'😡 Sermón de 5 min',s:'Moralina',fx:{con:-2,est:5,ans:4,sal:-3},r:'Sermón histórico. Risas contenidas explotan peor.'}]},
+ {e:'🎤',t:'ALUMNO QUIERE SER YOUTUBER',d:()=>`Un alumno te graba: "¡Profe, saluda a mi canal, tengo 12 subs!".`,opts:[
+   {l:'✋ “Sin grabar en clase, artista”',s:'Límites + cariño',fx:{con:1,est:2,ans:0,sal:1},r:'Apaga. Te pide featuring en el recreo.'},
+   {l:'🤳 Saludar al canal',s:'Fama',fx:{con:-2,est:-3,ans:-2,sal:4},r:'Saludas. Mañana eres thumbnail: "PROFE RAGE (se enfada)".'}]},
+];
+
+/* ============ LOG / TOAST ============ */
+function log(msg,color='#3ff2c4'){const d=document.createElement('div');d.className='log-item';d.style.borderColor=color;d.textContent=msg;const L=document.getElementById('log');L.prepend(d);while(L.children.length>5)L.lastChild.remove();}
+let toastT=null;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>t.style.display='none',2200);}
+/* ============ AUDIO: SFX + MUSICA procedural (Web Audio, sin ficheros) ============ */
+const AudioSys={
+  ctx:null,master:null,sfxBus:null,musicBus:null,musicFilter:null,noiseBuf:null,
+  enabled:true,musicOn:true,musicTimer:null,step:0,nextT:0,intensity:0,
+  init(){if(this.ctx){if(this.ctx.state==='suspended')this.ctx.resume();return;}try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    this.ctx=new AC();
+    this.master=this.ctx.createGain();this.master.gain.value=0.9;this.master.connect(this.ctx.destination);
+    this.sfxBus=this.ctx.createGain();this.sfxBus.gain.value=0.9;this.sfxBus.connect(this.master);
+    this.musicFilter=this.ctx.createBiquadFilter();this.musicFilter.type='lowpass';this.musicFilter.frequency.value=2200;this.musicFilter.Q.value=0.6;
+    this.musicBus=this.ctx.createGain();this.musicBus.gain.value=0.30;
+    this.musicBus.connect(this.musicFilter);this.musicFilter.connect(this.master);
+    const len=this.ctx.sampleRate*1;const buf=this.ctx.createBuffer(1,len,this.ctx.sampleRate);const d=buf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;this.noiseBuf=buf;
+  }catch(e){}},
+  now(){return this.ctx?this.ctx.currentTime:0;},
+  tone(f,dur=0.12,o={}){if(!this.ctx||!this.enabled&&!o.force)return;try{
+    const t=this.now()+(o.delay||0);const osc=this.ctx.createOscillator(),g=this.ctx.createGain();
+    osc.type=o.type||'square';osc.frequency.setValueAtTime(Math.max(20,f),t);
+    if(o.slide)osc.frequency.exponentialRampToValueAtTime(Math.max(20,o.slide),t+dur);
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(o.vol||0.12,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    osc.connect(g);g.connect(o.bus||this.sfxBus);osc.start(t);osc.stop(t+dur+0.05);}catch(e){}},
+  noise(dur=0.2,o={}){if(!this.ctx||!this.enabled&&!o.force)return;try{
+    const t=this.now()+(o.delay||0);const s=this.ctx.createBufferSource();s.buffer=this.noiseBuf;s.loop=true;
+    const f=this.ctx.createBiquadFilter();f.type=o.ftype||'bandpass';f.frequency.value=o.freq||1200;f.Q.value=o.q||1;
+    const g=this.ctx.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(o.vol||0.15,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    s.connect(f);f.connect(g);g.connect(o.bus||this.sfxBus);s.start(t);s.stop(t+dur+0.05);}catch(e){}},
+  seq(notes,gap=0.09,type='square',vol=0.1,slideTo=null){notes.forEach((f,i)=>{if(f>0)this.tone(f,gap*1.4,{type,vol,delay:i*gap,slide:slideTo});});},
+  midi(m){return 440*Math.pow(2,(m-69)/12);}
+};
+function beep(f=600,d=0.12,type='square'){AudioSys.init();AudioSys.tone(f,d,{type,vol:0.08});}
+const SFX={
+  ui(){AudioSys.tone(650,0.06,{type:'square',vol:0.07});},
+  teach(){const b=520+Math.random()*200;AudioSys.tone(b,0.07,{type:'square',vol:0.06});AudioSys.noise(0.09,{freq:3200,vol:0.05,delay:0.02});AudioSys.tone(b*1.5,0.06,{type:'triangle',vol:0.05,delay:0.06});},
+  chalk(){AudioSys.noise(0.12,{freq:4500,vol:0.04,ftype:'highpass'});},
+  breathe(){AudioSys.noise(0.6,{freq:600,vol:0.10,ftype:'lowpass',q:0.5});AudioSys.tone(220,0.5,{type:'sine',vol:0.06,slide:160,delay:0.05});AudioSys.tone(330,0.4,{type:'sine',vol:0.05,delay:0.4,slide:440});},
+  stare(combo=0){const base=900+Math.min(combo,8)*140;AudioSys.tone(base,0.09,{type:'sawtooth',vol:0.09,slide:base*0.4});AudioSys.noise(0.08,{freq:2500,vol:0.04});if(combo>=2)[660,880,1174].slice(0,Math.min(combo,3)).forEach((f,i)=>AudioSys.tone(f,0.1,{type:'square',vol:0.06,delay:0.05+i*0.05}));},
+  stareFail(){AudioSys.tone(300,0.2,{type:'sawtooth',vol:0.10,slide:150});},
+  coffee(){AudioSys.noise(0.3,{freq:1200,vol:0.12,ftype:'lowpass'});[440,660,880].forEach((f,i)=>AudioSys.tone(f,0.12,{type:'square',vol:0.07,delay:0.25+i*0.08}));AudioSys.tone(120,0.5,{type:'sawtooth',vol:0.05,delay:0.6,slide:200});},
+  trueno(){AudioSys.noise(0.9,{freq:200,vol:0.30,ftype:'lowpass'});AudioSys.tone(70,0.9,{type:'sine',vol:0.25,slide:35});[523,659,784,1046].forEach((f,i)=>AudioSys.tone(f,0.15,{type:'square',vol:0.08,delay:0.1+i*0.07}));},
+  warn(){[880,880].forEach((f,i)=>AudioSys.tone(f,0.14,{type:'square',vol:0.10,delay:i*0.18}));AudioSys.tone(587,0.25,{type:'sawtooth',vol:0.08,delay:0.36});},
+  pop(){AudioSys.tone(500,0.09,{type:'square',vol:0.09,slide:900});},
+  sneeze(){AudioSys.noise(0.25,{freq:1800,vol:0.18});AudioSys.tone(300,0.2,{type:'sawtooth',vol:0.08,slide:90});},
+  splash(){AudioSys.noise(0.35,{freq:700,vol:0.16,ftype:'lowpass'});AudioSys.tone(180,0.3,{type:'sine',vol:0.10,slide:60});},
+  paper(){for(let i=0;i<3;i++)AudioSys.noise(0.1,{freq:2500+Math.random()*1500,vol:0.08,delay:i*0.09});},
+  knock(){[0,0.18].forEach(dl=>{AudioSys.tone(180,0.08,{type:'sine',vol:0.22,delay:dl});AudioSys.noise(0.06,{freq:900,vol:0.12,delay:dl});});},
+  phone(){for(let i=0;i<3;i++){AudioSys.tone(880,0.12,{type:'square',vol:0.07,delay:i*0.28});AudioSys.tone(1175,0.12,{type:'square',vol:0.06,delay:i*0.28+0.13});}},
+  bell(){AudioSys.tone(1568,0.7,{type:'triangle',vol:0.14});AudioSys.tone(2093,0.9,{type:'triangle',vol:0.10,delay:0.12});AudioSys.tone(1046,0.5,{type:'sine',vol:0.08,delay:0.02});},
+  alarm(){AudioSys.tone(440,0.16,{type:'sawtooth',vol:0.10,slide:660});AudioSys.tone(660,0.14,{type:'square',vol:0.08,delay:0.16,slide:520});},
+  good(){[523,659,784].forEach((f,i)=>AudioSys.tone(f,0.14,{type:'square',vol:0.08,delay:i*0.07}));},
+  bad(){AudioSys.tone(220,0.25,{type:'sawtooth',vol:0.10,slide:110});AudioSys.tone(147,0.3,{type:'square',vol:0.07,delay:0.1,slide:98});},
+  timeout(){AudioSys.tone(196,0.4,{type:'sawtooth',vol:0.12,slide:82});AudioSys.noise(0.3,{freq:400,vol:0.10,delay:0.05,ftype:'lowpass'});},
+  phaseUp(){[440,554,659,880].forEach((f,i)=>AudioSys.tone(f,0.16,{type:'sawtooth',vol:0.10,delay:i*0.09}));AudioSys.noise(0.4,{freq:900,vol:0.10,delay:0.1,ftype:'lowpass'});},
+  burst(){for(let i=0;i<4;i++){AudioSys.tone(200+Math.random()*600,0.12,{type:'sawtooth',vol:0.09,delay:i*0.07,slide:120});AudioSys.noise(0.1,{freq:2000,vol:0.08,delay:i*0.07});}},
+  schoolBell(){for(let r=0;r<4;r++){const o=r*0.9;AudioSys.tone(2093,0.35,{type:'square',vol:0.13,delay:o});AudioSys.tone(1568,0.35,{type:'square',vol:0.12,delay:o+0.4});}AudioSys.tone(1046,2.2,{type:'triangle',vol:0.10,delay:0.2});},
+  win(){[523,659,784,1046,1318].forEach((f,i)=>AudioSys.tone(f,0.22,{type:'square',vol:0.09,delay:i*0.11}));AudioSys.tone(262,0.8,{type:'triangle',vol:0.08,delay:0.2});},
+  lose(){[392,330,262,196].forEach((f,i)=>AudioSys.tone(f,0.3,{type:'sawtooth',vol:0.09,delay:i*0.18}));},
+  eventSound(ev){const m=(ev&&ev.mood)||'';if(m==='paper')this.paper();else if(ev&&ev.t.includes('MÓVIL'))this.phone();else if(ev&&(ev.t.includes('PUERTA')||ev.t.includes('JEFE')||ev.t.includes('PADRES')))this.knock();else if(m==='sick')this.splash();else if(ev&&ev.t.includes('ACH'))this.sneeze();else if(m==='gum')this.pop();else this.alarm();}
+};
+/* --- Musica chiptune procedural: patio feliz que se tensa con el estres --- */
+const Music={
+  bpm:132,swing:0,
+  // 32 pasos: melodia alegre + bajo I–V–vi–IV en Do
+  mel:[76,0,79,0,81,0,79,0, 74,0,76,0,79,0,76,0, 76,0,79,0,81,0,84,0, 81,79,76,0,74,0,72,0],
+  bass:[48,0,48,0,55,0,55,0, 53,0,53,0,55,0,55,0, 48,0,48,0,55,0,55,0, 53,0,57,0,55,0,43,0],
+  start(){AudioSys.init();if(!AudioSys.ctx||AudioSys.musicTimer||!AudioSys.musicOn)return;
+    AudioSys.step=0;AudioSys.nextT=AudioSys.now()+0.1;
+    AudioSys.musicTimer=setInterval(()=>this.sched(),90);},
+  stop(){if(AudioSys.musicTimer){clearInterval(AudioSys.musicTimer);AudioSys.musicTimer=null;}},
+  setOn(on){AudioSys.musicOn=on;if(on){if(S.playing&&!S.paused)this.start();}else this.stop();},
+  sched(){if(!AudioSys.ctx||!AudioSys.musicOn)return;if(S.paused||!S.playing)return;
+    const sixteenth=60/this.bpm/4;
+    while(AudioSys.nextT<AudioSys.now()+0.35){
+      const i=AudioSys.step%32;const dl=Math.max(0,AudioSys.nextT-AudioSys.now());
+      const tense=clamp((S.est+S.ans)/200,0,1);AudioSys.intensity=tense;
+      if(AudioSys.musicFilter)AudioSys.musicFilter.frequency.value=1400+tense*2600+(Math.sin(AudioSys.step)*300);
+      const mv=this.mel[i];if(mv)AudioSys.tone(AudioSys.midi(mv+(tense>0.6?1:0)),sixteenth*1.8,{type:'square',vol:0.055,delay:dl,bus:AudioSys.musicBus});
+      const bv=this.bass[i];if(bv)AudioSys.tone(AudioSys.midi(bv-12),sixteenth*2.2,{type:'triangle',vol:0.10,delay:dl,bus:AudioSys.musicBus});
+      if(i%2===0)AudioSys.noise(0.03,{freq:6000+tense*3000,vol:0.018+tense*0.03,delay:dl,ftype:'highpass',bus:AudioSys.musicBus});
+      if(i%8===4)AudioSys.tone(180,0.08,{type:'sine',vol:0.10,delay:dl,bus:AudioSys.musicBus});
+      if(tense>0.55&&i%4===2)AudioSys.tone(AudioSys.midi(mv||76)+8,sixteenth,{type:'sawtooth',vol:0.02,delay:dl,bus:AudioSys.musicBus});
+      AudioSys.nextT+=sixteenth;AudioSys.step++;
+    }}
+};
+document.getElementById('btn-sound').onclick=e=>{AudioSys.init();AudioSys.enabled=!AudioSys.enabled;const b=e.currentTarget;b.textContent=AudioSys.enabled?'🔊':'🔇';b.classList.toggle('on',AudioSys.enabled);b.classList.toggle('off',!AudioSys.enabled);if(AudioSys.enabled)SFX.ui();toast(AudioSys.enabled?'🔊 Efectos activados':'🔇 Efectos silenciados');};
+document.getElementById('btn-music').onclick=e=>{AudioSys.init();const on=!AudioSys.musicOn;Music.setOn(on);const b=e.currentTarget;b.textContent=on?'🎵':'🚫';b.classList.toggle('on',on);b.classList.toggle('off',!on);toast(on?'🎵 Música del patio: ON':'🚫 Música en silencio (como tu clase nunca)');};
+
+/* ============ MODO IMPOSIBLE: caos escalado + eventos simultaneos ============ */
+function chaosOf(){
+  const total=Math.max(60,S.durationMin*60);
+  const p=clamp(S.elapsed/total,0,1);
+  let level=1,name='😌 Calma tensa',cls='lv1';
+  if(p>=0.8){level=5;name='🔥 INFIERNO · Todos a la vez';cls='lv5';}
+  else if(p>=0.6){level=4;name='🤯 Descontrol total';cls='lv4';}
+  else if(p>=0.4){level=3;name='😡 Se calienta el aula';cls='lv3';}
+  else if(p>=0.2){level=2;name='😬 Empieza el ruido';cls='lv2';}
+  const base=14-(S.nAlumnos/30)*8;
+  const interval=Math.max(1.4,base*(1-p*0.86));
+  const maxModals=level>=5?3:level>=3?2:1;
+  const modalTime=Math.max(7,15-p*8);
+  return {p,level,name,cls,interval,maxModals,modalTime};
+}
+function refreshChaosBadge(forceAnnounce){
+  const c=chaosOf();const el=document.getElementById('chaos');
+  if(el&&el.dataset.lv!=String(c.level)){el.dataset.lv=String(c.level);el.className=c.cls;el.textContent=`${c.name} · Lv.${c.level}`;
+    if(S.playing&&c.level>1){log(`⚠️ FASE ${c.level}: ${c.name}. Los eventos llegan más rápido${c.maxModals>1?' ¡Y A LA VEZ!':''}.`,'#ff8fa3');SFX.phaseUp();toast(`⚠️ ${c.name}`);}}
+  return c;
+}
+/* ============ EVENT ENGINE (pila simultanea) ============ */
+const wrap=document.getElementById('event-wrap');
+let modalStack=[];let evtId=0;
+let curEvent=null, curKid=null, eventTime=0, eventMax=15, eventTimerInt=null;
+function pickKid(forceMood){
+  let pool=kids.filter(k=>k.userData.mood==='ok');
+  if(!pool.length)pool=kids;
+  if(forceMood==='neae'){const ne=kids.filter(k=>k.userData.role==='neae'&&k.userData.mood==='ok');if(ne.length)return ne[Math.floor(Math.random()*ne.length)];}
+  // El repetidor lía 3x más: entra triple en el bombo
+  const bag=[];pool.forEach(k=>{bag.push(k);if(k.userData.role==='repe'){bag.push(k);bag.push(k);}});
+  return bag[Math.floor(Math.random()*bag.length)];
+}
+function drinkCoffee(){
+  if(!S.playing||S.paused||S.exiting||S.coffeeCD>0)return;
+  AudioSys.init();S.coffeeCD=90;S.coffeeT=30;
+  S.ans=clamp(S.ans-35,0,100);S.est=clamp(S.est-10,0,100);S.sal=clamp(S.sal+2,0,100);
+  log('☕ ¡Café de sala de profes! Ansiedad −35 de golpe. Pero te tiembla el pulso 30s (enseñas peor).','#ffd9a0');
+  toast('☕ ¡Subidón! Tembleque 30s...');SFX.coffee();updateBars();
+}
+function shoutThunder(){
+  if(!S.playing||S.paused||S.exiting||S.shoutCD>0)return;
+  AudioSys.init();S.shoutCD=120;S.silenceT=10;S.reboundT=0;
+  // Congela la pila actual: los timers no corren durante el silencio
+  log('📢 “¡¡SILENCIO TODO EL MUNDO!!” 10s de paz total... pero luego viene el rebote x2 durante 20s.','#ffb3c1');
+  toast('📢 ¡SILENCIO! 10s de paz... prepara el rebote');SFX.trueno();updateBars();
+}
+function applyMoodFx(ev,kid,chaosP){
+  const dur=10+chaosP*10;
+  kid.userData.walk=null;
+  if(ev.mood==='paper'){setBubble(kid,'📄',dur);kid.userData.mood='paper';for(let i=0;i<4;i++)setTimeout(()=>throwPaper(kid),i*300);}
+  else if(ev.mood==='cry'){setBubble(kid,'😭',dur);kid.userData.mood='cry';}
+  else if(ev.mood==='talk'){setBubble(kid,'⁉️',dur);kid.userData.mood='talk';}
+  else if(ev.mood==='walk'){setBubble(kid,'🧍',dur);kid.userData.mood='walk';kid.userData.standT=dur;
+    // Se levanta y PASEA de verdad por el pasillo central
+    walkKidTo(kid,kid.userData.seat.x+(Math.random()<0.5?-2.4:2.4),1.5,3.2,()=>{
+      if(kid.userData.mood==='walk')walkKidTo(kid,kid.userData.seat.x+(Math.random()-0.5)*3,-0.5+Math.random()*2,3);
+    });}
+  else if(ev.mood==='stand'){setBubble(kid,'🧍',dur);kid.userData.mood='stand';kid.userData.standT=dur;}
+  else if(ev.mood==='bath'){setBubble(kid,'🚽',dur);kid.userData.mood='bath';kid.userData.standT=dur;
+    // Se levanta y CAMINA HASTA LA PUERTA a esperar tu permiso
+    walkKidTo(kid,4.6,3.2,4.2);}
+  else if(ev.mood==='gum'){setBubble(kid,'🫧',dur);kid.userData.mood='gum';}
+  else if(ev.mood==='sick'){setBubble(kid,'🤮',dur);kid.userData.mood='sick';greenPuddle(kid.position);}
+  else if(ev.mood==='faint'){setBubble(kid,'😵',dur);kid.userData.mood='faint';}
+  else if(ev.mood==='neae'){setBubble(kid,'💙',dur);kid.userData.mood='neae';}
+  else if(ev.mood==='ball'){setBubble(kid,'⚽',dur);kid.userData.mood='ball';
+    // Balon real entrando por la ventana + el alumno VA A RECOGERLO
+    flyBallIn();openWindows(6);
+    walkKidTo(kid,-4.6,-1.2,3.5);}
+  else if(ev.mood==='door'){setBubble(kid,ev.e,10);kid.userData.mood='alert';kid.userData.bubbleT=10;
+    // Tocan: la puerta se abre y ENTRA el visitante caminando
+    doorOpenT=6;
+    const who=ev.t.includes('JEFE')?'🧑‍💼':ev.t.includes('PADRES')?'👪':'🧑‍🎓';
+    spawnVisitor(who);}
+  else {setBubble(kid,ev.e,10);kid.userData.mood='alert';kid.userData.bubbleT=10;}
+}
+function spawnAmbient(chaosP){
+  // Disrupcion visual sin tarjeta: solo se calma con clicks. Cuenta para el drenaje.
+  const kid=pickKid();const ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  applyMoodFx(ev,kid,chaosP);
+  if(!S.activeEvents.includes(kid))S.activeEvents.push(kid);
+  S.totalEvents++;
+}
+function spawnEvent(){
+  if(!S.playing||S.paused||S.exiting)return;
+  const c=chaosOf();
+  // Si la pila esta llena, el caos sigue en forma de disrupcion ambiental (simultaneidad real)
+  if(modalStack.length>=c.maxModals){spawnAmbient(c.p);if(Math.random()<c.p*0.6)spawnAmbient(c.p);return;}
+  const ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  const kid=pickKid(ev.mood);S.totalEvents++;
+  if(ev.mood==='gum')setTimeout(()=>{if(S.playing)gumSplat(kid.position);},3000);
+  applyMoodFx(ev,kid,c.p);
+  SFX.eventSound(ev);
+  if(!S.activeEvents.includes(kid))S.activeEvents.push(kid);
+  // Compat: primer modal sigue expuesto como curEvent
+  const id=++evtId;
+  const item={id,ev,kid,timeLeft:c.modalTime,maxTime:c.modalTime,chaosP:c.p};
+  modalStack.push(item);
+  if(modalStack.length===1){curEvent=ev;curKid=kid;eventTime=item.timeLeft;eventMax=item.maxTime;}
+  renderStack();
+  // Rafaga tardia: con caos alto, doble evento inmediato
+  if(c.p>0.55&&Math.random()<c.p*0.55&&modalStack.length<c.maxModals){SFX.burst();spawnEvent();}
+}
+function renderStack(){
+  if(!modalStack.length){wrap.classList.remove('show');wrap.innerHTML='';curEvent=null;curKid=null;syncHeadIcons();return;}
+  // Dock minimalista: una pill por crisis (el grueso vive en los 3 iconos 3D sobre el alumno).
+  // Sin fondo que tape la clase, sin scroll, botones siempre alcanzables.
+  wrap.classList.add('show');wrap.innerHTML='';
+  const note=document.createElement('div');note.className='stack-note';
+  note.textContent=modalStack.length>1?`⚠️ ${modalStack.length} CRISIS · clica los iconos sobre cada alumno`:'💡 Clica un icono sobre el alumno (verde / rojo)';
+  wrap.appendChild(note);
+  modalStack.forEach(item=>{
+    const card=document.createElement('div');card.id='event-card';card.className='stacked';
+    const aE=firstEmoji(item.ev.opts[0]?item.ev.opts[0].l:'✅'), bE=firstEmoji(item.ev.opts[1]?item.ev.opts[1].l:'❌');
+    card.innerHTML=`<div style="display:flex;gap:8px;align-items:center;padding:8px 8px 2px"><div style="font-size:22px">${item.ev.e}</div><div style="flex:1;min-width:0"><div style="font-family:'Press Start 2P';font-size:9px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.ev.t}</div><div style="font-size:10px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.kid.userData.name}</div></div><div class="head-label" data-timer style="font-size:10px">${Math.ceil(item.timeLeft)}s</div></div><div style="height:4px;background:#00000066;border-radius:3px;margin:4px 8px;overflow:hidden"><i data-fill style="display:block;height:100%;width:${(item.timeLeft/item.maxTime*100).toFixed(1)}%;background:#3ff2c4"></i></div><div id="event-opts"></div>`;
+    item.fill=card.querySelector('[data-fill]');item.fillTxt=card.querySelector('[data-timer]');
+    const box=card.querySelector('#event-opts');
+    item.ev.opts.forEach(o=>{const b=document.createElement('button');b.className='opt';b.style.padding='6px 8px';b.innerHTML=`<span style="font-size:16px">${firstEmoji(o.l)}</span><span style="flex:1">${o.l}<small>${o.s}</small></span>`;b.onclick=()=>resolveEventById(item.id,o);box.appendChild(b);});
+    const fb=document.createElement('button');fb.className='opt';fb.style.background='#ffd23f';fb.style.padding='4px 8px';fb.innerHTML=`🎯 localizar`;fb.onclick=()=>focusKid(item.id);box.appendChild(fb);
+    wrap.appendChild(card);
+  });
+  const first=modalStack[0];curEvent=first.ev;curKid=first.kid;eventTime=first.timeLeft;eventMax=first.maxTime;
+  syncHeadIcons();
+}
+function tickModals(dt){
+  if(!modalStack.length)return;
+  for(const item of modalStack){
+    item.timeLeft-=dt;
+    const pct=Math.max(0,item.timeLeft/item.maxTime);
+    if(item.fill){item.fill.style.width=(pct*100).toFixed(1)+'%';item.fill.style.background=item.timeLeft<4?'#ff2244':'#3ff2c4';}
+    if(item.fillTxt)item.fillTxt.textContent=Math.ceil(Math.max(0,item.timeLeft))+'s';
+    // Barra 3D bajo los iconos + urgencia del icono central (⏳→🔴)
+    const mk=markers.get(item.kid);
+    if(mk&&mk.head){
+      mk.head.barFg.scale.x=Math.max(0.001,pct);
+      mk.head.barFg.position.x=-0.75*(1-pct);
+      mk.head.barFg.material.color.setHex(item.timeLeft<4?0xff2244:item.timeLeft<8?0xffd23f:0x3ff2c4);
+      const urg=item.timeLeft<4?'🔴':item.timeLeft<8?'🟡':item.ev.e;
+      if(mk.head.urg!==urg){mk.head.urg=urg;setIconEmoji(mk.head.sC,urg,'#23264a');mk.head.evE=urg;}
+    }
+  }
+  modalStack.filter(m=>m.timeLeft<=0).forEach(item=>timeoutEventById(item.id,true));
+}
+function updateEventBar(){const f=modalStack[0];if(!f)return;const el=document.getElementById('event-timefill');if(el)el.style.width=(f.timeLeft/f.maxTime*100)+'%';}
+function applyFx(fx){
+  S.con=clamp(S.con+(fx.con||0),0,100);
+  S.est=clamp(S.est+(fx.est||0),0,100);
+  S.ans=clamp(S.ans+(fx.ans||0),0,100);
+  S.sal=clamp(S.sal+(fx.sal||0),0,100);
+  updateBars();
+}
+function resolveEventById(id,opt){
+  const i=modalStack.findIndex(m=>m.id===id);if(i<0)return;
+  const [item]=modalStack.splice(i,1);
+  // Resolver tarde = menos eficaz (castigo por cola)
+  const lateMul=item.timeLeft<3?1.35:1;
+  const fx={con:opt.fx.con||0,est:(opt.fx.est||0)*lateMul,ans:(opt.fx.ans||0)*lateMul,sal:opt.fx.sal||0};
+  applyFx(fx);S.resolved++;
+  log(`✅ ${opt.r}`,'#3ff2c4');const _sc=(fx.sal||0)-(fx.est||0)-(fx.ans||0);if(_sc>=0)SFX.good();else SFX.bad();
+  if(opt.clean){clearSomeDebris(opt.clean);log(`🧹 Recogen ${opt.clean} papeles del suelo. Enseñar vuelve a rendir.`,'#3ff2c4');}
+  // Movimiento de salida segun el evento resuelto:
+  const mk0=item.kid, m0=item.ev.mood;
+  if(m0==='bath'&&/^\s*✅|^\s*✔/u.test(opt.l||'')||m0==='bath'&&/S[ií],? ve/i.test(opt.l||'')){
+    // Permiso concedido: va al baño (sale por la puerta) y vuelve en 8s
+    log(`🚽 ${mk0.userData.name} sale corriendo al baño...`,'#3ff2c4');
+    walkKidTo(mk0,6.0,3.8,2.2,()=>{mk0.visible=false;setTimeout(()=>{if(S.playing){mk0.visible=true;kidBackToSeat(mk0,3);}},6000);});
+  } else if(m0==='door'||m0==='ball'){
+    if(visitor){const v=visitor;walkCharTo(v,6.4,3.8,1.4,()=>despawnVisitor());}
+    doorOpenT=Math.max(doorOpenT,1.5);
+    kidBackToSeat(mk0,2.5);
+  } else if(m0==='walk'||m0==='stand'||m0==='bath'){
+    kidBackToSeat(mk0,2.2);
+  }
+  if(m0==='ball'){openWindows(4);} // ventilar tras el balonazo
+  clearBubble(item.kid);item.kid.userData.mood='ok';item.kid.userData.standT=0;S.activeEvents=S.activeEvents.filter(k=>k!==item.kid);
+  renderStack();checkEnd();
+}
+function resolveEvent(opt){if(modalStack.length)resolveEventById(modalStack[0].id,opt);}
+function timeoutEventById(id,silent){
+  const i=modalStack.findIndex(m=>m.id===id);if(i<0)return;
+  const [item]=modalStack.splice(i,1);
+  const p=item.chaosP||0;
+  log(`⏰ ¡${item.ev.t} sin atender! El caos se expande (+${Math.round(7+p*9)} estrés)`,'#ff4d6d');SFX.timeout();
+  applyFx({est:7+p*9,ans:5+p*8,sal:-(3+p*6),con:-2});
+  if(item.ev.mood==='door'&&visitor){const v=visitor;walkCharTo(v,6.4,3.8,1.4,()=>despawnVisitor());doorOpenT=Math.max(doorOpenT,1.5);}
+  if(item.ev.mood==='bath'||item.ev.mood==='walk'||item.ev.mood==='ball')kidBackToSeat(item.kid,3);
+  clearBubble(item.kid);item.kid.userData.mood='alerta-tardia';item.kid.userData.standT=4;item.kid.userData.bubbleT=4;
+  setTimeout(()=>{if(item.kid.userData.mood==='alerta-tardia'){clearBubble(item.kid);item.kid.userData.mood='ok';}},4000);
+  // El alumno sigue nervioso: mantiene presion aunque salga de la pila
+  renderStack();checkEnd();
+}
+function timeoutEvent(){if(modalStack.length)timeoutEventById(modalStack[0].id);}
+
+/* ============ ACCIONES DOCENTE ============ */
+function teach(){
+  if(!S.playing||S.paused||S.exiting||S.teachCD>0)return;
+  const c=chaosOf();const p=c.p;
+  S.teachCD=2.2+p*1.2;S.lessons++;
+  const disrupt=S.activeEvents.length+modalStack.length;
+  let mult=(1-p*0.55);
+  if(S.coffeeT>0)mult*=0.6; // tembleque de cafeína: enseñas peor
+  const calmNeae=kids.filter(k=>k.userData.role==='neae'&&k.userData.mood==='ok').length;
+  if(calmNeae>0)mult*=1.1; // aula inclusiva cuidada: rinde un 10% más
+  const papers=floorDebris.filter(d=>d.kind==='paper').length;
+  mult*=Math.max(0.7,1-papers*0.02); // el suelo hecho un asco distrae
+  const eff=(disrupt>0?0.6:2.2)*mult;
+  const gain=Math.max(0.15,eff*(0.8+Math.random()*0.6));
+  S.con=clamp(S.con+gain,0,100);
+  S.est=clamp(S.est+0.8+disrupt*1.2+p*1.2,0,100);
+  S.ans=clamp(S.ans+(disrupt>0?1.5+p: -0.4),0,100);
+  // profe gesticula
+  teachBob=1;
+  // pizarra cambia
+  SFX.teach();
+  toast(disrupt>0?`📚 Explicas entre el caos (+${gain.toFixed(1)}%)`:`📚 ¡Explicación magistral! (+${gain.toFixed(1)}%)`);
+  // proyector parpadea
+  projLight.intensity=25;setTimeout(()=>projLight.intensity=8,300);
+  updateBars();checkEnd();
+}
+function breathe(){
+  if(!S.playing||S.paused||S.exiting||S.breatheCD>0)return;
+  const p=chaosOf().p;
+  S.breatheCD=25;
+  const mul=(1-p*0.55);
+  S.est=clamp(S.est-12*mul,0,100);S.ans=clamp(S.ans-10*mul,0,100);S.sal=clamp(S.sal+4*mul,0,100);S.con=clamp(S.con-1.5,0,100);
+  log(`☕ Respiras hondo. Miras por la ventana. Piensas en julio. Estrés -${(12*mul).toFixed(0)}`,'#3ff2c4');SFX.breathe();
+  updateBars();
+}
+document.getElementById('btn-teach').onclick=()=>{AudioSys.init();teach();};
+document.getElementById('btn-breathe').onclick=()=>{AudioSys.init();breathe();};
+document.getElementById('btn-coffee').onclick=drinkCoffee;
+document.getElementById('btn-shout').onclick=shoutThunder;
+let helpPrevPaused=false;
+function openHelp(){AudioSys.init();SFX.ui();helpPrevPaused=S.paused;S.paused=true;document.getElementById('btn-pause').textContent='▶️';document.getElementById('help-close').textContent=S.playing?'✔ VOLVER AL INFIERNO':'✔ ENTENDIDO, QUIERO SUFRIR';document.getElementById('help-screen').classList.remove('hidden');}
+document.getElementById('btn-help').onclick=openHelp;
+document.getElementById('btn-controls').onclick=openHelp;
+document.getElementById('help-close').onclick=()=>{SFX.ui();document.getElementById('help-screen').classList.add('hidden');S.paused=helpPrevPaused;document.getElementById('btn-pause').textContent=S.paused?'▶️':'⏸️';};
+addEventListener('keydown',e=>{if(e.key==='1')drinkCoffee();if(e.key==='2')shoutThunder();});
+document.getElementById('btn-pause').onclick=()=>{AudioSys.init();S.paused=!S.paused;document.getElementById('btn-pause').textContent=S.paused?'▶️':'⏸️';SFX.ui();toast(S.paused?'⏸️ Pausa. Ni los profes descansan...':'▶️ ¡Seguimos!');};
+addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();teach();}});
+
+/* click: 1º iconos 3D sobre la cabeza (resolver), 2º alumno (mirada fulminante) */
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+function headSprites(){
+  const arr=[];
+  markers.forEach(mk=>{if(mk.head)arr.push(mk.head.sA,mk.head.sB);});
+  return arr;
+}
+renderer.domElement.addEventListener('pointerdown',ev=>{
+  if(!S.playing)return;
+  mouse.x=(ev.clientX/innerWidth)*2-1;mouse.y=-(ev.clientY/innerHeight)*2+1;
+  ray.setFromCamera(mouse,camera);
+  // ¿Click en un icono de decision? Resuelve DIRECTO, sin cartel.
+  const hs=headSprites();
+  if(hs.length){
+    const hitH=ray.intersectObjects(hs,false);
+    if(hitH.length){
+      const a=hitH[0].object.userData.headAction;
+      if(a&&a.opt>=0){
+        const it=modalStack.find(m=>m.id===a.itemId);
+        if(it){S.clicks++;resolveEventById(it.id,it.ev.opts[a.opt]);return;}
+      }
+    }
+  }
+  const hits=ray.intersectObjects(kids,true);
+  if(hits.length){
+    let o=hits[0].object;while(o&&!kids.includes(o))o=o.parent;
+    if(o){S.clicks++;
+      if(o.userData.mood!=='ok'){
+        // COMBO: encadenar miradas en <3.5s multiplica el efecto
+        const now=performance.now();
+        if(now-S.comboT<3500)S.combo=Math.min(9,S.combo+1);else S.combo=1;
+        S.comboT=now;S.bestCombo=Math.max(S.bestCombo,S.combo);
+        SFX.stare(S.combo);
+        const dmg=4+2*S.combo;
+        o.userData.bubbleT=Math.max(0,(o.userData.bubbleT||5)-dmg);
+        if(S.combo>=3){clearBubble(o);o.userData.mood='ok';o.userData.standT=0;S.activeEvents=S.activeEvents.filter(k=>k!==o);log(`👁️⚡ ¡COMBO x${S.combo}! ${o.userData.name} se sienta de golpe.`,'#ffd23f');S.sal=clamp(S.sal+1+S.combo*0.5,0,100);}
+        else toast(`👁️ Mirada fulminante a ${o.userData.name}${S.combo>1?' (COMBO x'+S.combo+')':''}`);
+        S.est=clamp(S.est+0.5,0,100);
+        const badge=document.getElementById('combo-badge');
+        if(S.combo>1&&badge){badge.textContent=`👁️ COMBO x${S.combo}`;badge.classList.add('show');clearTimeout(badge._t);badge._t=setTimeout(()=>badge.classList.remove('show'),2500);}
+        else if(badge)badge.classList.remove('show');
+        updateBars();
+      }
+      else{
+        // Castigo por señalar a un inocente (salvo delegada: ella ayuda)
+        if(o.userData.role==='dele'){
+          S.deleTrust++;S.sal=clamp(S.sal+1,0,100);
+          toast(`🌟 ${o.userData.name} te sonríe. Confianza +1 (total ${S.deleTrust})`);
+          log(`🌟 La delegada anota tu gesto. Confianza ${S.deleTrust}. A partir de 3 calma sola una crisis cada 25s.`,'#3ff2c4');
+          SFX.good();
+        } else {
+          S.combo=0;document.getElementById('combo-badge').classList.remove('show');
+          SFX.stareFail();
+          toast(`😠 ${o.userData.name}: “¿¡a mí qué me mira!?” Combo roto. Ansiedad +2`);
+          S.ans=clamp(S.ans+2,0,100);
+        }
+        updateBars();
+      }
+      o.scale.set(1.15,0.9,1.15);setTimeout(()=>o.scale.set(1,1,1),200);
+    }
+  }
+});
+/* cursor de mano sobre discolos */
+let hoverTick=0;
+renderer.domElement.addEventListener('pointermove',ev=>{
+  const now=performance.now();if(now-hoverTick<90)return;hoverTick=now;
+  if(!S.playing){renderer.domElement.style.cursor='';return;}
+  mouse.x=(ev.clientX/innerWidth)*2-1;mouse.y=-(ev.clientY/innerHeight)*2+1;
+  ray.setFromCamera(mouse,camera);
+  const hh=headSprites();
+  const hits2=hh.length?ray.intersectObjects(hh,false):[];
+  const hits=ray.intersectObjects(kids,true);
+  let cur='';
+  if(hits2.length)cur='pointer';
+  else if(hits.length){let o=hits[0].object;while(o&&!kids.includes(o))o=o.parent;if(o&&o.userData.mood!=='ok')cur='pointer';}
+  renderer.domElement.style.cursor=cur;
+});
+
+/* ============ BARRAS / TIMER ============ */
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+function updateBars(){
+  const set=(id,v,val)=>{document.querySelector(id+' i').style.width=v+'%';document.querySelector(val).textContent=Math.round(v)+'%';};
+  set('#b-con',S.con,'#v-con');set('#b-est',S.est,'#v-est');set('#b-ans',S.ans,'#v-ans');set('#b-sal',S.sal,'#v-sal');
+  const danger=Math.max(S.est,S.ans)/100;
+  document.getElementById('vignette').style.boxShadow=`inset 0 0 ${120+danger*80}px rgba(255,0,60,${danger*0.55})`;
+  document.getElementById('btn-teach').disabled=S.teachCD>0;
+  document.getElementById('btn-breathe').style.opacity=S.breatheCD>0?0.5:1;
+  const bc=document.getElementById('btn-coffee'),bs=document.getElementById('btn-shout');
+  if(bc){bc.disabled=S.coffeeCD>0;bc.textContent=S.coffeeCD>0?`☕ CAFÉ (${Math.ceil(S.coffeeCD)}s)`:(S.coffeeT>0?'☕ TEMBLEQUE...':'☕ CAFÉ (1)');}
+  if(bs){bs.disabled=S.shoutCD>0;bs.textContent=S.shoutCD>0?`📢 TRUENO (${Math.ceil(S.shoutCD)}s)`:(S.silenceT>0?`📢 ¡SHH! (${Math.ceil(S.silenceT)}s)`:'📢 TRUENO (2)');}
+  const pb=document.getElementById('powers-bar');
+  if(pb){let h=`<span>🌟 delegada ${S.deleTrust}/3</span>`;if(S.coffeeT>0)h+=`<span>☕ tembleque ${Math.ceil(S.coffeeT)}s (enseñas peor)</span>`;if(S.silenceT>0)h+=`<span>📢 silencio ${Math.ceil(S.silenceT)}s</span>`;if(S.reboundT>0)h+=`<span>🔥 rebote x2 ${Math.ceil(S.reboundT)}s</span>`;pb.innerHTML=h;}
+  [['#b-est',S.est,'est'],['#b-ans',S.ans,'ans'],['#b-sal',100-S.sal,'sal']].forEach(([id,v])=>{const el=document.querySelector(id);if(el)el.classList.toggle('crit',v>=75);});
+  checkWarnings();
+}
+function checkWarnings(){
+  if(!S.playing||S.exiting)return;
+  const w=S.warn75;
+  if(S.est>=75&&!w.est){w.est=true;log('⚠️ ¡Te tiembla el ojo! Estrés al 75%. Respira o café, YA.','#ff8fa3');toast('⚠️ Estrés 75%: te tiembla el ojo');SFX.warn();}
+  if(S.ans>=75&&!w.ans){w.ans=true;log('⚠️ ¡Se te cierra el pecho! Ansiedad al 75%.','#ff8fa3');toast('⚠️ Ansiedad 75%: el pecho aprieta');SFX.warn();}
+  if(S.sal<=25&&!w.sal){w.sal=true;log('⚠️ Ves estrellitas... Salud mental bajo 25. La delegada te mira preocupada.','#ff8fa3');toast('⚠️ Salud mental crítica');SFX.warn();}
+}
+function fmtTime(s){s=Math.max(0,Math.ceil(s));return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+function checkEnd(){
+  if(!S.playing||S.exiting)return;
+  if(S.sal<=0)return endGame(false,'🧠 BURNOUT','Tu salud mental llegó a 0. Abrazas la pizarra y susurras “ya queda menos para julio”.','La sala de profes te hace un bizum para un spa. El cuñao dice: “¿ves? si no hacen nada”.');
+  if(S.est>=100)return endGame(false,'😡 BAJA LABORAL','Estrés al 100%. El médico te manda reposo y tila.','El parte dice “sobrecarga por guerra de papel”. Tus alumnos te hacen una tarjeta que pone “vuelve pronto”.');
+  if(S.ans>=100)return endGame(false,'😰 ATAQUE DE ANSIEDAD','La ansiedad te supera. Sales al pasillo a respirar.','La orientadora te da un abrazo y un horario más humano. Sobrevivir también es ganar.');
+  if(S.timeLeft<=0){
+    const isEpic=S.durationMin>=50||S.elapsed>=2990;
+    if(isEpic)return startEpicExit();
+    if(S.con>=65)return endGame(true,'🎓 ¡CLASE APROBADA!','Los alumnos aprendieron. Conocimiento '+Math.round(S.con)+'%.','Dirección te pone una estrellita. Los padres del grupo de WhatsApp, por una vez, dan las gracias.');
+    else return endGame(false,'📉 NO APRENDIERON NADA','Se acabó el tiempo con conocimiento '+Math.round(S.con)+'%.','Un alumno dice “profe, ¿hoy hemos dado algo?”. Ríes para no llorar. El cuñao tenía razón... o no.');
+  }
+}
+function startEpicExit(){
+  // Solo el 1%: suena la alarma del cole y el profe sale por la puerta
+  S.exiting=true;S.exitT=0;S.slowmoT=2;modalStack=[];renderStack();
+  spawnConfetti(teacher.position,140);setTimeout(()=>{if(S.exiting)spawnConfetti(teacher.position,80);},1200);
+  Music.stop();SFX.schoolBell();
+  document.body.classList.add('alarm-flash');
+  log('🔔🔔 ¡RRRRIING! ¡FIN DE LA JORNADA! Has sobrevivido a los 50 minutos.','#ffd23f');
+  toast('🔔 ¡Alarma! Sales por la puerta como una leyenda...');
+  kids.forEach(k=>{clearBubble(k);k.userData.mood='ok';});S.activeEvents=[];
+  setTimeout(()=>document.body.classList.remove('alarm-flash'),4500);
+}
+function endGame(win,title,sub,joke){
+  S.playing=false;S.exiting=false;modalStack=[];wrap.classList.remove('show');wrap.innerHTML='';clearInterval(eventTimerInt);
+  markers.forEach((mk,k)=>{if(mk.head){k.remove(mk.head.group);mk.head=null;}});
+  despawnVisitor();
+  document.getElementById('end-screen').classList.remove('hidden');
+  document.getElementById('end-title').textContent=title;
+  document.getElementById('end-sub').textContent=sub;
+  document.getElementById('end-hero').style.background=win?'linear-gradient(90deg,#3ff2c4,#00c2ff)':'linear-gradient(90deg,#ff4d6d,#ff7a00)';
+  document.getElementById('end-stats').innerHTML=`
+    <div class="stat">📚<b>${Math.round(S.con)}%</b>conocimiento</div>
+    <div class="stat">🎭<b>${S.totalEvents}</b>eventos</div>
+    <div class="stat">✅<b>${S.resolved}</b>resueltos</div>
+    <div class="stat">📖<b>${S.lessons}</b>lecciones</div>`;
+  document.getElementById('end-joke').innerHTML=`📰 <b>Titular del día:</b> ${joke} <br><br>👁️ Miradas: ${S.clicks} • ⚡ Mejor combo x${S.bestCombo} • 🌟 Confianza delegada: ${S.deleTrust} • 🧠 Salud final: ${Math.round(S.sal)}% • ⏱️ ${S.nAlumnos} alumn@s • ${Math.round(S.elapsed/60)} min aguantados`;
+  Music.stop();if(win)SFX.win();else SFX.lose();setTimeout(()=>Music.start(),2500);
+}
+
+/* ============ START ============ */
+document.getElementById('start-btn').onclick=()=>{
+  S.name=cleanDocente(document.getElementById('inp-name').value);
+  S.avatar=avatar;S.nAlumnos=+document.getElementById('inp-alumnos').value;
+  S.durationMin=durMin;S.timeLeft=durMin*60;
+  S.con=0;S.est=15;S.ans=10;S.sal=100;S.totalEvents=0;S.resolved=0;S.clicks=0;S.lessons=0;S.elapsed=0;
+  S.eventCD=3;S.activeEvents=[];S.playing=true;S.paused=false;S.warned=false;S.exiting=false;S.exitT=0;S._bell2=false;S._epicDone=false;modalStack=[];evtId=0;wrap.innerHTML='';wrap.classList.remove('show');
+  S.combo=0;S.comboT=0;S.bestCombo=0;S.coffeeCD=0;S.coffeeT=0;S.shoutCD=0;S.silenceT=0;S.reboundT=0;S.deleCD=20;S.deleTrust=0;S.warn75={est:false,ans:false,sal:false};S.slowmoT=0;S.focusT=0;S.focusP=null;
+  floorDebris.forEach(d=>scene.remove(d.mesh));floorDebris.length=0;
+  confetti.forEach(c=>scene.remove(c.mesh));confetti.length=0;
+  refreshChaosBadge();
+  buildClass(S.nAlumnos);
+  // color profe según avatar
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('end-screen').classList.add('hidden');
+  log(`🔔 ¡Empieza la clase! Eres ${S.avatar==='f'?'la profa':'el profe'} ${S.name} con ${S.nAlumnos} fieras. Duración: ${S.durationMin} min.`,'#ffd23f');
+  log('💡 Clica los ICONOS sobre cada alumno (🟩 opción A / 🟥 opción B). 👁️ en alumno = mirada.','#3ff2c4');
+  AudioSys.init();SFX.bell();setTimeout(()=>Music.start(),400);
+  toast('🔔 ¡Buenos días, clase! (gritos de fondo) 🔊🎵');
+  updateBars();
+};
+document.getElementById('start-btn2').onclick=()=>{document.getElementById('end-screen').classList.add('hidden');document.getElementById('start-screen').classList.remove('hidden');};
+
+/* ============ LOOP ============ */
+const clk=new THREE.Clock();
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clk.getDelta(),0.05);
+  const t=clk.elapsedTime;
+  // animación kids + CAMINAN de verdad (baño, paseo, balon, puerta)
+  kids.forEach((k,i)=>{
+    const u=k.userData;
+    u.phase+=dt*3;
+    // desplazamiento con saltitos si esta caminando
+    if(u.walk){
+      u.walk.t+=dt;
+      const a=Math.min(1,u.walk.t/u.walk.dur);
+      const e=a<0.5?2*a*a:1-Math.pow(-2*a+2,2)/2;
+      k.position.x=u.walk.fx+(u.walk.tx-u.walk.fx)*e;
+      k.position.z=u.walk.fz+(u.walk.tz-u.walk.fz)*e;
+      k.rotation.y=Math.atan2(u.walk.tx-u.walk.fx,u.walk.tz-u.walk.fz);
+      if(a>=1){const cb=u.walk.cb;u.walk=null;k.rotation.y=Math.PI;if(cb)cb();}
+    }
+    const walking=!!u.walk;
+    let y=u.baseY+Math.sin(u.phase)*0.02, ry=k.rotation.y;
+    if(!walking)ry=Math.PI;
+    if(u.mood==='talk'){y+=Math.abs(Math.sin(u.phase*3))*0.08;if(!walking)ry=Math.PI+Math.sin(u.phase)*0.4;}
+    if(u.mood==='paper'){y+=Math.abs(Math.sin(u.phase*4))*0.12;}
+    if(u.mood==='bath'){y=0.3+Math.abs(Math.sin(u.phase*(walking?8:3)))*0.12;if(k.position.z>2&&!walking)k.rotation.y=Math.PI;}
+    if(u.mood==='walk'){y=0.3+Math.abs(Math.sin(u.phase*7))*0.14;}
+    if(u.mood==='ball'){y=0.25+Math.abs(Math.sin(u.phase*6))*0.12;}
+    if(u.mood==='cry'&&!walking){k.position.x=u.seat.x+Math.sin(u.phase*6)*0.03;}
+    if(u.mood==='door'){y+=Math.abs(Math.sin(u.phase*5))*0.06;}
+    if((u.mood==='stand'||u.standT>0)&&!walking){y=0.35+Math.abs(Math.sin(u.phase*3))*0.1;u.standT-=dt;}
+    if(u.mood==='faint'){k.rotation.x=-1.2;y=-0.2;}
+    else k.rotation.x=0;
+    if(u.mood==='gum'&&u.bubble){u.bubble.scale.setScalar(0.9+Math.sin(u.phase*5)*0.25);}
+    k.position.y=u.seat.y+y-0.45+0.45+(walking?Math.abs(Math.sin(u.phase*4))*0.06:0);
+    k.rotation.y=ry;
+    if(u.bubble){u.bubble.position.y=2.2+Math.sin(u.phase*2)*0.08;u.bubbleT-=dt;if(u.bubbleT<=0){clearBubble(k);if(S.activeEvents.includes(k))S.activeEvents=S.activeEvents.filter(x=>x!==k);u.mood='ok';u.standT=0;if(k.position.x!==u.seat.x||k.position.z!==u.seat.z)kidBackToSeat(k,2);}}
+  });
+  // anillo pulsante + iconos flotantes (bob)
+  syncMarkers();
+  markers.forEach((mk,kid)=>{const s=1+Math.sin(t*6+mk.phase)*0.15;mk.ring.scale.set(s,s,1);
+    // el anillo sigue al alumno si camina (baño/paseo)
+    mk.ring.position.set(kid.position.x,0.03,kid.position.z);
+    if(mk.head){mk.head.group.position.y=2.15+Math.sin(t*3+mk.phase)*0.12;
+      const b=Math.sin(t*5+mk.phase)*0.06;mk.head.sA.position.y=b;mk.head.sB.position.y=-b;}});
+  // puerta: se abre (gira) mientras hay visitante
+  if(typeof doorMesh!=='undefined'){
+    const target=(visitor||doorOpenT>0)?-1.1:0;
+    doorMesh.rotation.y+=(target-doorMesh.rotation.y)*Math.min(1,dt*4);
+    if(doorOpenT>0)doorOpenT-=dt;
+  }
+  // visitante camina dentro y gesticula
+  if(visitor){visitorT+=dt;
+    const w=visitor.userData.walk;
+    if(w){w.t+=dt;const a=Math.min(1,w.t/w.dur);visitor.position.x=w.fx+(w.tx-w.fx)*a;visitor.position.z=w.fz+(w.tz-w.fz)*a;if(a>=1){const cb=w.cb;visitor.userData.walk=null;if(cb)cb();}}
+    else visitor.position.y=Math.abs(Math.sin(visitorT*6))*0.05;
+  }
+  // balones volando con parabola real ventana -> clase
+  for(let i=flyBalls.length-1;i>=0;i--){const b=flyBalls[i];b.t+=dt;const a=Math.min(1,b.t/b.dur);
+    b.mesh.position.set(b.fx+(b.tx-b.fx)*a,b.fy+(b.ty-b.fy)*a+Math.sin(a*Math.PI)*1.6,b.fz+(b.tz-b.fz)*a);
+    b.mesh.rotation.x+=dt*9;b.mesh.rotation.z+=dt*5;
+    if(a>=1){dropFloorPaper(b.mesh.position);log('⚽ ¡El balón bota en clase! Alguien tendrá que devolverlo...','#ffd23f');scene.remove(b.mesh);flyBalls.splice(i,1);}}
+  // cortinas ondeando + rafagas de viento visible
+  const sway=windowOpenT>0?0.35:0.08;
+  curtains.forEach(c=>{c.userData.ph+=dt*(windowOpenT>0?7:1.6);c.rotation.x=Math.sin(c.userData.ph)*sway;c.position.x=-6.6+Math.sin(c.userData.ph*0.7)*sway*0.6;});
+  if(windowOpenT>0)windowOpenT-=dt;
+  for(let i=windParts.length-1;i>=0;i--){const wp=windParts[i];wp.life-=dt;wp.mesh.position.addScaledVector(wp.vel,dt);wp.mesh.material.opacity=Math.max(0,wp.life);if(wp.life<=0){scene.remove(wp.mesh);windParts.splice(i,1);}}
+  // papelitos: al tocar suelo se quedan como escombro persistente
+  const sdt=S.slowmoT>0?dt*0.25:dt;
+  for(let i=paperBalls.length-1;i>=0;i--){const p=paperBalls[i];p.vel.y-=9*sdt;p.mesh.position.addScaledVector(p.vel,sdt);if(p.mesh.position.y<0.08&&!p.landed){p.landed=true;dropFloorPaper(p.mesh.position);scene.remove(p.mesh);paperBalls.splice(i,1);continue;}p.life-=sdt;if(p.life<=0){scene.remove(p.mesh);paperBalls.splice(i,1);}}
+  // confeti de tiza (final epico)
+  for(let i=confetti.length-1;i>=0;i--){const cf=confetti[i];cf.vel.y-=9*sdt;cf.mesh.position.addScaledVector(cf.vel,sdt);cf.mesh.rotation.x+=cf.rot.x*sdt;cf.mesh.rotation.y+=cf.rot.y*sdt;cf.life-=sdt;if(cf.life<=0||cf.mesh.position.y<0.02){scene.remove(cf.mesh);confetti.splice(i,1);}}
+  // profe
+  teachBob=Math.max(0,teachBob-dt*2);
+  teacher.position.y=Math.abs(Math.sin(t*2))*0.03+teachBob*0.15;
+  teacher.rotation.y=Math.sin(t*0.6)*0.25;
+  teacher.position.x=0.5+Math.sin(t*0.4)*1.2;
+  cone.material.opacity=0.08+Math.sin(t*7)*0.015+(projLight.intensity>10?0.15:0);
+  // salida epica por la puerta (solo supervivientes del 1%)
+  if(S.exiting){
+    S.exitT+=dt;
+    const k=Math.min(1,S.exitT/4.5);
+    teacher.position.x+=((6.2)-teacher.position.x)*Math.min(1,dt*1.6);
+    teacher.position.z+=((3.8)-teacher.position.z)*Math.min(1,dt*1.6);
+    teacher.rotation.y=Math.PI/2+Math.sin(t*8)*0.05;
+    teacher.position.y=Math.abs(Math.sin(t*10))*0.08;
+    if(S.exitT>1&&!S._bell2){S._bell2=true;SFX.schoolBell();}
+    if(k>=1&&!S._epicDone){S._epicDone=true;
+      endGame(true,'🏆 ¡CLUB DEL 1%! SALES POR LA PUERTA','Sonó la alarma tras 50 minutos infernales. Sales por la puerta entre aplausos (y un vómito sin limpiar). Conocimiento '+Math.round(S.con)+'%.','El cuñao, viendo esto: “...bueno, hoy sí habéis trabajado”. Solo el 1% lo logra. Eres leyenda del claustro.');
+    }
+  }
+  // timer
+  if(S.playing&&!S.paused&&!S.exiting){
+    S.timeLeft-=dt;S.elapsed+=dt;
+    const ch=chaosOf();const p=ch.p;
+    if(S.slowmoT>0)S.slowmoT-=dt;
+    S.teachCD=Math.max(0,S.teachCD-dt);S.breatheCD=Math.max(0,S.breatheCD-dt);
+    S.coffeeCD=Math.max(0,S.coffeeCD-dt);S.coffeeT=Math.max(0,S.coffeeT-dt);
+    S.shoutCD=Math.max(0,S.shoutCD-dt);
+    if(S.comboT&&performance.now()-S.comboT>3500&&S.combo>0){S.combo=0;const bdg=document.getElementById('combo-badge');if(bdg)bdg.classList.remove('show');}
+    // Poder trueno: silencio congela timers, luego rebote x2
+    let spawnMul=1;
+    if(S.silenceT>0){S.silenceT-=dt;if(S.silenceT<=0){S.reboundT=20;log('🔥 ¡REBOTE! El silencio se paga: caos x2 durante 20s.','#ff4d6d');toast('🔥 Rebote x2... agárrate');SFX.burst();}}
+    else if(S.reboundT>0){S.reboundT-=dt;spawnMul=0.5;}
+    // Delegada: con confianza >=3 calma sola una crisis ambiental cada 25s
+    if(S.deleTrust>=3){S.deleCD-=dt;if(S.deleCD<=0){S.deleCD=25;const amb=kids.find(k=>k.userData.mood!=='ok'&&!modalStack.some(m=>m.kid===k));if(amb){clearBubble(amb);amb.userData.mood='ok';amb.userData.standT=0;S.activeEvents=S.activeEvents.filter(k=>k!==amb);log(`🌟 La delegada calma a ${amb.userData.name} ella sola. (Confianza ${S.deleTrust})`,'#3ff2c4');SFX.good();}}}
+    // Charcos persistentes: cada uno suma estrés pasivo
+    const puds=floorDebris.filter(d=>d.kind==='puddle').length;
+    if(puds>0)S.est=clamp(S.est+dt*0.05*puds,0,100);
+    // drenaje brutal escalado: imposible de aguantar 50 min sin jugar perfecto
+    const nAct=S.activeEvents.length+modalStack.length*0.5;
+    S.est=clamp(S.est+dt*(0.18+p*0.85)*(1+nAct*0.55),0,100);
+    S.ans=clamp(S.ans+dt*(0.12+p*0.7)*(nAct>0?1.8:0.4),0,100);
+    if(nAct===0){S.sal=clamp(S.sal+dt*(0.25-p*0.2),0,100);S.con=clamp(S.con+dt*0.05,0,100);}
+    else{S.sal=clamp(S.sal-dt*((0.25+p*0.75)*nAct+0.04),0,100);S.con=clamp(S.con-dt*0.15*nAct,0,100);}
+    document.getElementById('timer').textContent=fmtTime(S.timeLeft);
+    // spawn escalado: cada vez mas frecuente + simultaneo
+    S.eventCD-=dt;
+    if(S.eventCD<=0&&S.silenceT<=0){
+      spawnEvent();
+      S.eventCD=ch.interval*spawnMul*(0.7+Math.random()*0.6);
+      if(p>0.6&&Math.random()<p*0.5){spawnEvent();SFX.burst();} // rafaga extra
+    }
+    if(S.silenceT<=0)tickModals(dt);
+    if(Math.floor(S.elapsed*2)!==Math.floor((S.elapsed-dt)*2)){updateBars();refreshChaosBadge();}
+    // aviso último minuto
+    if(S.timeLeft<60&&!S.warned){S.warned=true;log('⏰ ¡Último minuto! ¡Remata la explicación!','#ffd23f');SFX.bell();}
+    if(S.timeLeft<=0){S.timeLeft=0;checkEnd();}
+  }
+  controls.update();if(S.focusT>0&&S.focusP){S.focusT-=dt;controls.target.lerp(S.focusP,Math.min(1,dt*4));}clampCamera();
+  renderer.render(scene,camera);
+}
+buildClass(18);updateBars();
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+loop();
+</script>
+</body>
+</html>
