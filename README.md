@@ -25,7 +25,10 @@ Sin instalación, sin registro. Solo necesitas internet la primera vez (Three.js
 
 * **Clica los iconos sobre cada alumno** (🟩 opción A / 🟥 opción B) para resolver su crisis sin abrir menús. El icono central muestra el evento y se pone 🟡/🔴 cuando se agota el tiempo.
 * **Click en un alumno díscolo** = 👀 mirada fulminante. Encadena miradas en menos de 3,5 s para subir el **COMBO x2…x9** (¡pero no mires a un inocente o romperás el combo!).
-* **ESPACIO o 📚 DAR CLASE** para explicar (rinde menos con el aula patas arriba).
+* **ESPACIO o 📚 DAR CLASE** para explicar de viva voz (rinde menos con el aula patas arriba).
+* 🖊️ **Pizarra (clic)**: el profe camina hasta ella y escribe con tiza (+conocimiento, gasta 1 de 6 tizas).
+* 📽️ **Proyector (clic)**: lo enciende/apaga; encendido pasa una diapositiva cada 7 s (+0,9 %). Si se cae internet, clic para reiniciar el router.
+* 💻 **Portátil (clic)**: pasa lista — nombra a 4 alumnos y clica al llamado antes de 6 s (+1,3 % por presente).
 * **Arrastra** para mirar alrededor, **rueda / slider / teclas +/−** para zoom.
 * El dock inferior-izquierdo resume cada crisis por si prefieres leer la descripción antes de decidir.
 

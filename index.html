@@ -140,7 +140,7 @@
   <button class="btn on" id="btn-sound" title="Efectos de sonido">🔊</button>
   <button class="btn on" id="btn-music" title="Música de fondo">🎵</button>
 </div>
-<div id="hint">🖱️ Click en díscolo = mirada fulminante (¡encadena COMBO!) • Arrastra para mirar<br>🔍 Zoom: <input type="range" id="zoom" min="4" max="16" step="0.5" value="14"> <span id="zoom-val">x14.0</span> <span style="opacity:.7">(rueda o teclas +/−)</span></div>
+<div id="hint">🖱️ Díscolo = mirada · 🖊️ pizarra = explicar · 📽️ proyector = diapos · 💻 portátil = pasar lista • Arrastra para mirar<br>🔍 Zoom: <input type="range" id="zoom" min="4" max="16" step="0.5" value="14"> <span id="zoom-val">x14.0</span> <span style="opacity:.7">(rueda o teclas +/−)</span></div>
 
 <div id="event-wrap">
   <div id="event-card">
@@ -161,6 +161,7 @@
       <div class="satire">☕ <b>Café (tecla 1, CD 90s):</b> ansiedad −35 al instante, pero 30s de tembleque enseñando al 60%.<br>📢 <b>Voz de trueno (tecla 2, CD 120s):</b> 10s de silencio total... y después 20s de <b>rebote x2</b>.</div>
       <div class="satire">😈 <b>Repetidor</b> (gorra roja): lía 3 veces más.<br>🌟 <b>Delegada</b> (insignia azul): clícala en calma para ganar su confianza. Con <b>3+</b> calma ella sola una crisis cada 25s.<br>💙 <b>Alumnado NEAE</b> (diadema): su evento los busca a ellos; mientras estén tranquilos, enseñas un 10% mejor.</div>
       <div class="satire">🧹 Los <b>papeles del suelo</b> restan hasta un 30% al enseñar y los <b>charcos</b> dan estrés pasivo. La buena opción de la guerra de papel manda a recoger.<br>📚 <b>Espacio</b> = dar clase · <b>1/2</b> = poderes · Ojo que tiembla / pecho que aprieta / estrellitas = aviso al 75%.</div>
+      <div class="satire">🖊️ <b>Pizarra:</b> clica para ir y escribir con tiza (+conocimiento, 6 tizas y a por otra).<br>📽️ <b>Proyector:</b> clica para encender: diapositiva cada 7s (+0.9%). Si se cae internet, clica para reiniciar el router.<br>💻 <b>Portátil:</b> clica para <b>pasar lista</b>: nombra a 4 y clica al alumno llamado antes de 6s.</div>
       <button class="btn" id="help-close" style="background:#ffd23f;padding:14px">✔ VOLVER AL INFIERNO</button>
     </div>
   </div>
@@ -282,21 +283,49 @@ room.traverse(o=>{if(o.userData.front)o.visible=false;});
 // zócalo
 room.add(box(14,0.3,0.32,0x3b4a6b,0,0.15,-5.48));
 
-// Pizarra
-const piz=box(7,2,0.15,0x1f7a4d,0,2.2,-5.3); room.add(piz);
+// Pizarra (ESTACIÓN CLICABLE 🖊️: escribir con tiza)
+const piz=box(7,2,0.15,0x1f7a4d,0,2.2,-5.3); piz.userData.station='board'; room.add(piz);
 room.add(box(7.4,2.4,0.08,0x8a6b3d,0,2.2,-5.38));
-const chalkTxt=makeTextSprite('2+2=¿4?  ¡SILENCIO!  Examen viernes',(c)=>{});
+const LESSONS=['TEMA 3: LOS VERBOS','2+2 = ¿4?','MCM Y MCD (rezad)','DICTADO: sin copiar','EL CUERPO HUMANO','FRACCIONES (llanto)','PIRAMIDE ALIMENTICIA','EL AGUA: no se bebe en clase'];
+let lessonI=0;
+const boardCv=document.createElement('canvas');boardCv.width=512;boardCv.height=128;
+const boardG=boardCv.getContext('2d');
+const boardTex=new THREE.CanvasTexture(boardCv);
+function drawBoard(l1,l2){boardG.clearRect(0,0,512,128);boardG.fillStyle='#fff';boardG.font='bold 40px monospace';boardG.textAlign='center';boardG.textBaseline='middle';boardG.fillText(String(l1).slice(0,26),256,42);boardG.font='bold 30px monospace';boardG.fillStyle='#ffe9a8';boardG.fillText(String(l2||'').slice(0,30),256,92);boardTex.needsUpdate=true;}
+drawBoard(LESSONS[0],'¡SILENCIO! Examen viernes');
+const chalkTxt=new THREE.Sprite(new THREE.SpriteMaterial({map:boardTex,transparent:true}));
 chalkTxt.position.set(0,2.25,-5.2); chalkTxt.scale.set(6,1.1,1); room.add(chalkTxt);
 // Mesa profe
 const tDesk=new THREE.Group(); tDesk.add(box(2.4,0.12,1,0x7a5230,0,0.95,0)); tDesk.add(box(2.2,0.85,0.85,0x5d3f24,0,0.48,0));
-tDesk.add(box(0.7,0.45,0.05,0x222831,-0.5,1.3,-0.1)); // portátil
+const laptopMesh=box(0.7,0.45,0.05,0x222831,-0.5,1.3,-0.1); laptopMesh.userData.station='pc'; tDesk.add(laptopMesh); // portátil (ESTACIÓN CLICABLE 💻: pasar lista)
+const hitMat=new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false});
+const pcHit=new THREE.Mesh(new THREE.BoxGeometry(2.8,2.0,1.8),hitMat);pcHit.position.set(-0.5,1.1,0);pcHit.userData.station='pc';tDesk.add(pcHit);
+const projHit=new THREE.Mesh(new THREE.BoxGeometry(1.8,1.4,1.4),hitMat);projHit.position.set(0,3.4,1);projHit.userData.station='proj';room.add(projHit);
 tDesk.add(box(0.3,0.35,0.4,0xffd23f,0.7,1.2,0.1)); // taza / papeles
 tDesk.position.set(-1.5,0,3.2); room.add(tDesk);
 // Proyector colgando + cono
-room.add(box(0.1,1,0.1,0x333,0,4,1)); const proj=box(0.9,0.3,0.7,0x222831,0,3.4,1); room.add(proj);
+room.add(box(0.1,1,0.1,0x333,0,4,1)); const proj=box(0.9,0.3,0.7,0x222831,0,3.4,1); proj.userData.station='proj'; room.add(proj); // proyector (ESTACIÓN CLICABLE 📽️)
 const cone=new THREE.Mesh(new THREE.ConeGeometry(1.4,3.5,24,1,true),new THREE.MeshBasicMaterial({color:0xbfe9ff,transparent:true,opacity:0.10,side:THREE.DoubleSide}));
 cone.position.set(0,2.2,-1.2); cone.rotation.x=-1.05; room.add(cone);
-const screenP=box(3,1.8,0.08,0xf4faff,1.8,2.4,-5.28); room.add(screenP);
+const screenP=box(3,1.8,0.08,0xf4faff,1.8,2.4,-5.28); screenP.userData.station='proj'; room.add(screenP);
+// Diapositivas del proyector (pantalla reescribible + pagina de error sin internet)
+const SLIDES=[{t:'🗺️ TEMA 3: LOS VERBOS',s:'yo / tú / él... ¡todos copian!',bg:'#1d3557'},{t:'📐 FRACCIONES',s:'1/2 + 1/4 = ? (silencio)',bg:'#6a4c93'},{t:'🌋 VOLCANES',s:'no meter la mano',bg:'#9c6644'},{t:'🧬 EL CUERPO HUMANO',s:'respetadlo',bg:'#2d6a4f'}];
+let slideI=0, projOn=false, wifiDown=false;
+const slideCv=document.createElement('canvas');slideCv.width=512;slideCv.height=288;
+const slideG=slideCv.getContext('2d');
+const slideTex=new THREE.CanvasTexture(slideCv);
+function drawSlideCur(){slideG.fillStyle=wifiDown?'#3d0000':SLIDES[slideI].bg;slideG.fillRect(0,0,512,288);slideG.textAlign='center';if(wifiDown){slideG.fillStyle='#ff6b6b';slideG.font='bold 64px serif';slideG.fillText('📶',256,110);slideG.font='bold 40px monospace';slideG.fillText('SIN CONEXIÓN',256,180);slideG.font='28px monospace';slideG.fillStyle='#ffb3b3';slideG.fillText('llamad al TIC',256,225);}else{slideG.fillStyle='#fff';slideG.font='bold 40px monospace';slideG.fillText(SLIDES[slideI].t.slice(0,22),256,115);slideG.font='30px monospace';slideG.fillStyle='#ffe9a8';slideG.fillText(SLIDES[slideI].s.slice(0,28),256,175);slideG.font='24px monospace';slideG.fillStyle='#ffffff88';slideG.fillText('clica el proyector: ON/OFF',256,238);}slideTex.needsUpdate=true;}
+drawSlideCur();
+const slideMesh=new THREE.Mesh(new THREE.PlaneGeometry(2.8,1.6),new THREE.MeshBasicMaterial({map:slideTex}));
+slideMesh.position.set(1.8,2.4,-5.22);room.add(slideMesh);
+// Registro de estaciones + etiquetas flotantes que invitan a clicar
+const stationMeshes=[piz,proj,screenP,laptopMesh,pcHit,projHit];
+const stationLabels=[];
+let roll=null; // pasando lista: {queue,current,deadline,hits,total}
+function stationLabel(e,x,y,z){const s=emojiSprite(e);s.position.set(x,y,z);s.scale.set(0.7,0.7,1);scene.add(s);stationLabels.push({s,y,ph:Math.random()*6});}
+stationLabel('🖊️',-3.1,3.75,-5.1);
+stationLabel('📽️',0,4.15,1);
+stationLabel('💻',-1.5,2.15,3.2);
 // Ventanas izquierda + cortinas que se mueven con la corriente
 const curtains=[];
 for(let i=0;i<3;i++){const w=new THREE.Mesh(new THREE.BoxGeometry(0.1,1.8,1.8),new THREE.MeshStandardMaterial({color:0xbfe9ff,emissive:0x9fd8ff,emissiveIntensity:.7}));w.position.set(-6.85,2.6,-3+i*2.6);room.add(w);room.add(box(0.12,0.12,2,0xffffff,-6.85,3.55,-3+i*2.6));room.add(box(0.12,0.12,2,0xffffff,-6.85,1.65,-3+i*2.6));
@@ -591,6 +620,9 @@ const EVENTS=[
  {e:'🚪',t:'TOC-TOC EN LA PUERTA',mood:'door',d:()=>`Tocan a la puerta. Es el delegado de 6ºA: "¿Tenéis un cargador? ¿Y tijeras? ¿Y pegamento? ¿Y...?"`,opts:[
    {l:'😊 Darle lo que pide',s:'Vecindad',fx:{con:-2,est:1,ans:0,sal:2},r:'Se va feliz. Tu clase aplaude tu bondad. Pierdes 2 min.'},
    {l:'🙅 “¡Estamos en clase!”',s:'Frontera',fx:{con:0,est:3,ans:2,sal:0},r:'Cierras. Se oye “borde...”. Te afecta un poco.'}]},
+ {e:'📶',t:'¡SE CAE INTERNET!',d:()=>`A mitad del vídeo de volcanes: ruedita cargando... Un coro grita: "¡PROFE, NO VA INTERNET!". El TIC está en otro centro.`,mood:'wifi',opts:[
+   {l:'🔌 Reiniciar el router',s:'Apagar, contar hasta 10, encender',fx:{con:1,est:3,ans:2,sal:0},r:'Apagas, cuentas hasta 10, enciendes. ¡LUCES VERDES! Héroe tecnológico.'},
+   {l:'🗣️ A pulso, como en el 87',s:'Sin pantallas',fx:{con:1,est:5,ans:4,sal:-1},r:'Explicas los volcanes con mímica. Un alumno dice que pareces un sim.'}]},
  {e:'📱',t:'SUENA UN MÓVIL: REGGAETÓN',d:()=>`Suena un móvil a todo volumen. Melodía: reggaetón del 2019. El dueño silba mirando al techo.`,opts:[
    {l:'📦 “Al cajón de los móviles”',s:'Normativa',fx:{con:0,est:4,ans:1,sal:0},r:'Lo requisas. “¡ES DE MI MADRE!”. Drama contenido.'},
    {l:'💃 Bailar 5 segundos y requisarlo',s:'Leyenda',fx:{con:-1,est:-4,ans:-3,sal:5},r:'Haces el pasito. La clase ENLOQUECE. Eres meme... pero feliz.'}]},
@@ -691,6 +723,11 @@ const SFX={
   schoolBell(){for(let r=0;r<4;r++){const o=r*0.9;AudioSys.tone(2093,0.35,{type:'square',vol:0.13,delay:o});AudioSys.tone(1568,0.35,{type:'square',vol:0.12,delay:o+0.4});}AudioSys.tone(1046,2.2,{type:'triangle',vol:0.10,delay:0.2});},
   win(){[523,659,784,1046,1318].forEach((f,i)=>AudioSys.tone(f,0.22,{type:'square',vol:0.09,delay:i*0.11}));AudioSys.tone(262,0.8,{type:'triangle',vol:0.08,delay:0.2});},
   lose(){[392,330,262,196].forEach((f,i)=>AudioSys.tone(f,0.3,{type:'sawtooth',vol:0.09,delay:i*0.18}));},
+  write(){for(let i=0;i<3;i++)AudioSys.tone(3200+Math.random()*800,0.09,{type:'sine',vol:0.05,delay:i*0.12,slide:1800});},
+  slide(){AudioSys.tone(1046,0.12,{type:'sine',vol:0.09});AudioSys.tone(1568,0.15,{type:'sine',vol:0.07,delay:0.1});},
+  keys(){for(let i=0;i<8;i++)AudioSys.noise(0.03,{freq:3000+Math.random()*2000,vol:0.06,delay:i*0.07,ftype:'highpass'});},
+  wifi(){AudioSys.tone(160,0.4,{type:'sawtooth',vol:0.12,slide:80});AudioSys.tone(110,0.4,{type:'square',vol:0.08,delay:0.15,slide:70});},
+  router(){[392,523,659,784].forEach((f,i)=>AudioSys.tone(f,0.1,{type:'square',vol:0.07,delay:i*0.08}));},
   eventSound(ev){const m=(ev&&ev.mood)||'';if(m==='paper')this.paper();else if(ev&&ev.t.includes('MÓVIL'))this.phone();else if(ev&&(ev.t.includes('PUERTA')||ev.t.includes('JEFE')||ev.t.includes('PADRES')))this.knock();else if(m==='sick')this.splash();else if(ev&&ev.t.includes('ACH'))this.sneeze();else if(m==='gum')this.pop();else this.alarm();}
 };
 /* --- Musica chiptune procedural: patio feliz que se tensa con el estres --- */
@@ -796,6 +833,7 @@ function applyMoodFx(ev,kid,chaosP){
     doorOpenT=6;
     const who=ev.t.includes('JEFE')?'🧑‍💼':ev.t.includes('PADRES')?'👪':'🧑‍🎓';
     spawnVisitor(who);}
+  else if(ev.mood==='wifi'){setBubble(kid,'📶',dur);kid.userData.mood='wifi';wifiDown=true;drawSlideCur();SFX.wifi();log('📶 Un alumno grita: "¡PROFE, NO CARGA EL VÍDEO!". La pantalla se pone roja.','#ff8fa3');}
   else {setBubble(kid,ev.e,10);kid.userData.mood='alert';kid.userData.bubbleT=10;}
 }
 function spawnAmbient(chaosP){
@@ -896,6 +934,7 @@ function resolveEventById(id,opt){
     kidBackToSeat(mk0,2.2);
   }
   if(m0==='ball'){openWindows(4);} // ventilar tras el balonazo
+  if(m0==='wifi'){wifiDown=false;drawSlideCur();SFX.router();log('📶 ¡Internet de vuelta! El vídeo carga. La clase aplaude al router.','#3ff2c4');}
   clearBubble(item.kid);item.kid.userData.mood='ok';item.kid.userData.standT=0;S.activeEvents=S.activeEvents.filter(k=>k!==item.kid);
   renderStack();checkEnd();
 }
@@ -908,6 +947,7 @@ function timeoutEventById(id,silent){
   applyFx({est:7+p*9,ans:5+p*8,sal:-(3+p*6),con:-2});
   if(item.ev.mood==='door'&&visitor){const v=visitor;walkCharTo(v,6.4,3.8,1.4,()=>despawnVisitor());doorOpenT=Math.max(doorOpenT,1.5);}
   if(item.ev.mood==='bath'||item.ev.mood==='walk'||item.ev.mood==='ball')kidBackToSeat(item.kid,3);
+  if(item.ev.mood==='wifi'){wifiDown=false;drawSlideCur();log('📶 El TIC lo arregla en remoto. Has perdido 10 minutos de vídeo.','#ff8fa3');}
   clearBubble(item.kid);item.kid.userData.mood='alerta-tardia';item.kid.userData.standT=4;item.kid.userData.bubbleT=4;
   setTimeout(()=>{if(item.kid.userData.mood==='alerta-tardia'){clearBubble(item.kid);item.kid.userData.mood='ok';}},4000);
   // El alumno sigue nervioso: mantiene presion aunque salga de la pila
@@ -963,6 +1003,104 @@ addEventListener('keydown',e=>{if(e.key==='1')drinkCoffee();if(e.key==='2')shout
 document.getElementById('btn-pause').onclick=()=>{AudioSys.init();S.paused=!S.paused;document.getElementById('btn-pause').textContent=S.paused?'▶️':'⏸️';SFX.ui();toast(S.paused?'⏸️ Pausa. Ni los profes descansan...':'▶️ ¡Seguimos!');};
 addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();teach();}});
 
+/* ============ ESTACIONES: pizarra / proyector / portatil ============ */
+function chalkDustBurst(){
+  for(let i=0;i<10;i++){
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(0.08,0.08),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.9}));
+    m.position.set(-0.5+(Math.random()-0.5)*3,1.8+Math.random()*0.8,-5.0);
+    scene.add(m);windParts.push({mesh:m,vel:new THREE.Vector3((Math.random()-0.5)*1,-0.5-Math.random(),0.3),life:1.1});
+  }
+}
+function writeOnBoard(){
+  if(!S.playing||S.paused||S.exiting||(S.boardCD||0)>0||teacher.userData.walk)return;
+  AudioSys.init();
+  if((S.chalkLeft??6)<=0){
+    S.chalkLeft=6;S.boardCD=2;SFX.chalk();chalkDustBurst();
+    drawBoard('TIZA NUEVA','¡seguimos!');
+    log('🖊️ Sacas una tiza nueva del cajón. La anterior murió como una heroína.','#3ff2c4');
+    toast('🖊️ Tiza nueva: 6 usos');updateBars();return;
+  }
+  S.boardCD=6;S.chalkLeft=(S.chalkLeft??6)-1;S.lessons++;
+  log('🖊️ Vas a la pizarra a explicar el tema...','#ffd23f');
+  walkCharTo(teacher,-0.5,-3.2,1.4,()=>{
+    if(!S.playing||S.exiting)return;
+    S.writeT=1.6;SFX.write();chalkDustBurst();
+    lessonI=(lessonI+1)%LESSONS.length;
+    drawBoard(LESSONS[lessonI],'¡copiadlo!');
+    const c=chaosOf(), p=c.p;
+    const disrupt=S.activeEvents.length+modalStack.length;
+    let mult=(1-p*0.4);if(S.coffeeT>0)mult*=0.6;
+    const calmNeae=kids.filter(k=>k.userData.role==='neae'&&k.userData.mood==='ok').length;
+    if(calmNeae>0)mult*=1.1;
+    const papers=floorDebris.filter(d=>d.kind==='paper').length;
+    mult*=Math.max(0.7,1-papers*0.02);
+    const gain=Math.max(0.4,(disrupt>0?1.2:3.0)*mult);
+    S.con=clamp(S.con+gain,0,100);
+    S.est=clamp(S.est+1+disrupt*0.8,0,100);
+    teachBob=1;toast(`🖊️ Explicas en la pizarra (+${gain.toFixed(1)}%) · tizas: ${S.chalkLeft}`);
+    updateBars();checkEnd();
+    setTimeout(()=>{if(S.playing&&!S.exiting&&!teacher.userData.walk)walkCharTo(teacher,0.5,2.4,1.6);},1400);
+  });
+  updateBars();
+}
+function toggleProj(){
+  if(!S.playing||S.paused||S.exiting)return;
+  AudioSys.init();
+  const w=modalStack.find(m=>m.ev.mood==='wifi');
+  if(w&&wifiDown){SFX.router();resolveEventById(w.id,w.ev.opts[0]);return;} // atajo: clicar el proyector reinicia el router
+  projOn=!projOn;S.slideT=5;
+  if(projOn){drawSlideCur();SFX.slide();log('📽️ Enciendes el proyector del 2007. Reza para que no huela a quemado.','#3ff2c4');toast('📽️ Proyector ON: diapositiva cada 7s (+0.9%)');}
+  else{SFX.ui();log('📽️ Apagas el proyector. Descansa, campeón.','#3ff2c4');}
+  updateBars();
+}
+function startRoll(){
+  if(!S.playing||S.paused||S.exiting||(S.pcCD||0)>0||roll)return;
+  AudioSys.init();S.pcCD=80;SFX.keys();
+  const pool=kids.filter(k=>k.userData.mood==='ok');
+  const bag=(pool.length>=4?pool:[...kids]).slice();
+  for(let i=bag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]];}
+  roll={queue:bag.slice(0,4),current:null,deadline:0,hits:0,total:4};
+  log('📋 ¡Pasando lista en el portátil! Clica al alumno nombrado antes de 6s.','#ffd23f');
+  nextRollCall();updateBars();
+}
+function nextRollCall(){
+  if(!roll)return;
+  if(!roll.queue.length){finishRoll();return;}
+  const k=roll.queue.shift();
+  roll.current=k;roll.deadline=6;
+  k.userData.mood='roll';setBubble(k,'❓',6);
+  if(!S.activeEvents.includes(k))S.activeEvents.push(k);
+  toast('📋 ¿'+k.userData.name+'? ¡clica en él/ella!');
+  SFX.pop();
+}
+function markRollHit(k){
+  if(!roll||roll.current!==k)return;
+  roll.hits++;S.lessons++;
+  clearBubble(k);k.userData.mood='ok';S.activeEvents=S.activeEvents.filter(x=>x!==k);
+  S.con=clamp(S.con+1.3,0,100);S.sal=clamp(S.sal+1,0,100);
+  toast('✅ ¡Presente! +1.3% conocimiento');
+  SFX.good();updateBars();nextRollCall();
+}
+function missRoll(){
+  if(!roll)return;
+  const k=roll.current;
+  if(k){clearBubble(k);if(k.userData.mood==='roll')k.userData.mood='ok';S.activeEvents=S.activeEvents.filter(x=>x!==k);}
+  S.con=clamp(S.con-0.5,0,100);
+  log('❌ Nadie responde... falta sin justificar.','#ff8fa3');SFX.bad();
+  updateBars();nextRollCall();
+}
+function finishRoll(){
+  if(!roll)return;
+  const h=roll.hits;
+  if(h>=4){S.con=clamp(S.con+1,0,100);S.sal=clamp(S.sal+2,0,100);log('📋 ¡Todos presentes! Ni una silla vacía. Milagro reconocido por la UNESCO.','#3ff2c4');SFX.win();}
+  else log(`📋 Lista terminada: ${h}/4 presentes.`,'#3ff2c4');
+  roll=null;updateBars();checkEnd();
+}
+function handleStation(st){
+  if(st==='board')writeOnBoard();
+  else if(st==='proj')toggleProj();
+  else if(st==='pc')startRoll();
+}
 /* click: 1º iconos 3D sobre la cabeza (resolver), 2º alumno (mirada fulminante) */
 const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
 function headSprites(){
@@ -986,10 +1124,15 @@ renderer.domElement.addEventListener('pointerdown',ev=>{
       }
     }
   }
+  const stHits=ray.intersectObjects(stationMeshes,false);
   const hits=ray.intersectObjects(kids,true);
+  // Gana lo que esté DELANTE: si un alumno tapa la pizarra, la mirada manda
+  if(stHits.length&&(!hits.length||stHits[0].distance<hits[0].distance)){handleStation(stHits[0].object.userData.station);return;}
   if(hits.length){
     let o=hits[0].object;while(o&&!kids.includes(o))o=o.parent;
-    if(o){S.clicks++;
+    if(o){
+      if(roll&&roll.current===o){markRollHit(o);return;}
+      S.clicks++;
       if(o.userData.mood!=='ok'){
         // COMBO: encadenar miradas en <3.5s multiplica el efecto
         const now=performance.now();
@@ -1037,7 +1180,8 @@ renderer.domElement.addEventListener('pointermove',ev=>{
   const hits=ray.intersectObjects(kids,true);
   let cur='';
   if(hits2.length)cur='pointer';
-  else if(hits.length){let o=hits[0].object;while(o&&!kids.includes(o))o=o.parent;if(o&&o.userData.mood!=='ok')cur='pointer';}
+  else if(hits.length){let o=hits[0].object;while(o&&!kids.includes(o))o=o.parent;if(o&&(o.userData.mood!=='ok'||(roll&&roll.current===o)))cur='pointer';}
+  if(!cur){const sh=ray.intersectObjects(stationMeshes,false);if(sh.length)cur='pointer';}
   renderer.domElement.style.cursor=cur;
 });
 
@@ -1054,7 +1198,7 @@ function updateBars(){
   if(bc){bc.disabled=S.coffeeCD>0;bc.textContent=S.coffeeCD>0?`☕ CAFÉ (${Math.ceil(S.coffeeCD)}s)`:(S.coffeeT>0?'☕ TEMBLEQUE...':'☕ CAFÉ (1)');}
   if(bs){bs.disabled=S.shoutCD>0;bs.textContent=S.shoutCD>0?`📢 TRUENO (${Math.ceil(S.shoutCD)}s)`:(S.silenceT>0?`📢 ¡SHH! (${Math.ceil(S.silenceT)}s)`:'📢 TRUENO (2)');}
   const pb=document.getElementById('powers-bar');
-  if(pb){let h=`<span>🌟 delegada ${S.deleTrust}/3</span>`;if(S.coffeeT>0)h+=`<span>☕ tembleque ${Math.ceil(S.coffeeT)}s (enseñas peor)</span>`;if(S.silenceT>0)h+=`<span>📢 silencio ${Math.ceil(S.silenceT)}s</span>`;if(S.reboundT>0)h+=`<span>🔥 rebote x2 ${Math.ceil(S.reboundT)}s</span>`;pb.innerHTML=h;}
+  if(pb){let h=`<span>🌟 delegada ${S.deleTrust}/3</span>`;if(S.coffeeT>0)h+=`<span>☕ tembleque ${Math.ceil(S.coffeeT)}s (enseñas peor)</span>`;if(S.silenceT>0)h+=`<span>📢 silencio ${Math.ceil(S.silenceT)}s</span>`;if(S.reboundT>0)h+=`<span>🔥 rebote x2 ${Math.ceil(S.reboundT)}s</span>`;h+=`<span>🖊️ tiza x${S.chalkLeft??6}</span>`;h+=`<span>📽️ ${wifiDown?'📶ERROR':projOn?'ON':'off'}</span>`;h+=`<span>📋 ${roll?'¡lista!':(S.pcCD||0)>0?'lista '+Math.ceil(S.pcCD)+'s':'lista'}</span>`;pb.innerHTML=h;}
   [['#b-est',S.est,'est'],['#b-ans',S.ans,'ans'],['#b-sal',100-S.sal,'sal']].forEach(([id,v])=>{const el=document.querySelector(id);if(el)el.classList.toggle('crit',v>=75);});
   checkWarnings();
 }
@@ -1114,6 +1258,7 @@ document.getElementById('start-btn').onclick=()=>{
   S.con=0;S.est=15;S.ans=10;S.sal=100;S.totalEvents=0;S.resolved=0;S.clicks=0;S.lessons=0;S.elapsed=0;
   S.eventCD=3;S.activeEvents=[];S.playing=true;S.paused=false;S.warned=false;S.exiting=false;S.exitT=0;S._bell2=false;S._epicDone=false;modalStack=[];evtId=0;wrap.innerHTML='';wrap.classList.remove('show');
   S.combo=0;S.comboT=0;S.bestCombo=0;S.coffeeCD=0;S.coffeeT=0;S.shoutCD=0;S.silenceT=0;S.reboundT=0;S.deleCD=20;S.deleTrust=0;S.warn75={est:false,ans:false,sal:false};S.slowmoT=0;S.focusT=0;S.focusP=null;
+  S.boardCD=0;S.chalkLeft=6;S.pcCD=0;S.writeT=0;S.slideT=7;projOn=false;wifiDown=false;roll=null;slideI=0;lessonI=0;teacher.userData.walk=null;teacher.position.set(0.5,0,2.4);drawBoard(LESSONS[0],'¡SILENCIO! Examen viernes');drawSlideCur();
   floorDebris.forEach(d=>scene.remove(d.mesh));floorDebris.length=0;
   confetti.forEach(c=>scene.remove(c.mesh));confetti.length=0;
   refreshChaosBadge();
@@ -1174,6 +1319,7 @@ function loop(){
     mk.ring.position.set(kid.position.x,0.03,kid.position.z);
     if(mk.head){mk.head.group.position.y=2.15+Math.sin(t*3+mk.phase)*0.12;
       const b=Math.sin(t*5+mk.phase)*0.06;mk.head.sA.position.y=b;mk.head.sB.position.y=-b;}});
+  stationLabels.forEach(o=>{o.s.position.y=o.y+Math.sin(t*2.5+o.ph)*0.12;});
   // puerta: se abre (gira) mientras hay visitante
   if(typeof doorMesh!=='undefined'){
     const target=(visitor||doorOpenT>0)?-1.1:0;
@@ -1203,10 +1349,12 @@ function loop(){
   for(let i=confetti.length-1;i>=0;i--){const cf=confetti[i];cf.vel.y-=9*sdt;cf.mesh.position.addScaledVector(cf.vel,sdt);cf.mesh.rotation.x+=cf.rot.x*sdt;cf.mesh.rotation.y+=cf.rot.y*sdt;cf.life-=sdt;if(cf.life<=0||cf.mesh.position.y<0.02){scene.remove(cf.mesh);confetti.splice(i,1);}}
   // profe
   teachBob=Math.max(0,teachBob-dt*2);
-  teacher.position.y=Math.abs(Math.sin(t*2))*0.03+teachBob*0.15;
-  teacher.rotation.y=Math.sin(t*0.6)*0.25;
-  teacher.position.x=0.5+Math.sin(t*0.4)*1.2;
-  cone.material.opacity=0.08+Math.sin(t*7)*0.015+(projLight.intensity>10?0.15:0);
+  const tw=teacher.userData.walk;
+  if(tw&&!S.exiting){tw.t+=dt;const ta=Math.min(1,tw.t/tw.dur);teacher.position.x=tw.fx+(tw.tx-tw.fx)*ta;teacher.position.z=tw.fz+(tw.tz-tw.fz)*ta;teacher.rotation.y=Math.atan2(tw.tx-tw.fx,tw.tz-tw.fz);if(ta>=1){const tcb=tw.cb;teacher.userData.walk=null;if(tcb)tcb();}}
+  else if(!S.exiting){teacher.position.x=0.5+Math.sin(t*0.4)*1.2;teacher.rotation.y=(S.writeT>0)?Math.PI:Math.sin(t*0.6)*0.25;}
+  teacher.position.y=Math.abs(Math.sin(t*2))*0.03+teachBob*0.15+(tw?Math.abs(Math.sin(t*10))*0.05:0);
+  if(projOn&&projLight.intensity<8)projLight.intensity=8;
+  cone.material.opacity=(projOn?0.16:0.06)+Math.sin(t*7)*0.015+(projLight.intensity>10?0.15:0);
   // salida epica por la puerta (solo supervivientes del 1%)
   if(S.exiting){
     S.exitT+=dt;
@@ -1226,6 +1374,10 @@ function loop(){
     const ch=chaosOf();const p=ch.p;
     if(S.slowmoT>0)S.slowmoT-=dt;
     S.teachCD=Math.max(0,S.teachCD-dt);S.breatheCD=Math.max(0,S.breatheCD-dt);
+    S.boardCD=Math.max(0,(S.boardCD||0)-dt);S.pcCD=Math.max(0,(S.pcCD||0)-dt);
+    if(S.writeT>0)S.writeT-=dt;
+    if(projOn&&!wifiDown){S.slideT=(S.slideT??7)-dt;if(S.slideT<=0){S.slideT=7;slideI=(slideI+1)%SLIDES.length;drawSlideCur();SFX.slide();S.con=clamp(S.con+0.9,0,100);toast('📽️ '+SLIDES[slideI].t);}}
+    if(roll&&roll.current){roll.deadline-=dt;if(roll.deadline<=0)missRoll();}
     S.coffeeCD=Math.max(0,S.coffeeCD-dt);S.coffeeT=Math.max(0,S.coffeeT-dt);
     S.shoutCD=Math.max(0,S.shoutCD-dt);
     if(S.comboT&&performance.now()-S.comboT>3500&&S.combo>0){S.combo=0;const bdg=document.getElementById('combo-badge');if(bdg)bdg.classList.remove('show');}
