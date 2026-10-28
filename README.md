@@ -12,6 +12,8 @@ Sin instalación, sin registro. Solo necesitas internet la primera vez (Three.js
 
 ![Partida en curso](docs/img/partida.png)
 
+![Ranking mundial](docs/img/ranking.png)
+
 ## 🎯 Objetivo
 
 * **Da clase** para subir el **📚 Conocimiento** del alumnado.
@@ -41,6 +43,12 @@ Estornudos sónicos, llantos por una goma con forma de unicornio, el de *"¿pued
 * ☕ **Café de sala de profes** — ansiedad −35 de golpe, pero 30 s de tembleque enseñando peor.
 * 📢 **Voz de trueno** — 10 s de silencio total... seguidos de 20 s de rebote de caos x2.
 
+### El aula vive
+
+* 🧑‍🏫 El profe y su mesa están **al frente, en un costado junto a la pizarra**, mirando a sus fieras. Si escribes en la pizarra, camina hasta ella y vuelve.
+* 🟩 **Pupitres verde colegio** de toda la vida, con su silla a juego.
+* 🚪 La **puerta se abre de verdad**: tiene hueco, marco y pasillo oscuro detrás. Quien cruza el umbral (visitantes, salidas al baño, tu salida triunfal del 1 %) **se desvanece** en vez de atravesar madera.
+
 ### El alumnado tiene memoria
 
 * 😈 **Repetidor** (gorra roja): lía 3 veces más.
@@ -63,12 +71,15 @@ Al terminar cada partida recibes una **puntuación**: conocimiento ×10 + minuto
 
 Tu marca se envía sola al **ranking mundial** (pestañas por duración: 5/10/15/25/50 min + general) y se guarda tu mejor marca local. Botón **🏆 RANKING** en la pantalla inicial y al final de cada partida.
 
+Backend **Back4App (Parse)**: las claves del juego son públicas por diseño; la seguridad real está en el servidor (permisos estrictos + validación en `cloudcode.js`): cualquiera puede leer el top y registrar marcas válidas, pero nadie puede editar ni borrar nada.
+
 ## 🛠️ Tecnologías
 
-* Un solo `index.html` (~78 KB de JS), sin build ni dependencias instaladas.
+* Un solo `index.html` (~99 KB de JS), sin build ni dependencias instaladas.
 * Render 3D minimalista pixel-art en tiempo real con **Three.js** (importado por CDN como ES module).
-* Sonido y música chiptune 100 % **Web Audio API** procedural: 14 efectos + banda sonora que se tensa con tu estrés. Sin ficheros de audio.
-* Estado, físicas de juguetes (papeles, balones, confeti) y escalado de dificultad, todo en vanilla JS.
+* Sonido y música chiptune 100 % **Web Audio API** procedural: casi 20 efectos (tiza, timbre, router, proyector...) + banda sonora que se tensa con tu estrés. Sin ficheros de audio.
+* Estado, físicas de juguetes (papeles, balones, confeti), escalado de dificultad y ranking, todo en vanilla JS + SDK de Parse por CDN.
+* Ranking en **Back4App**: tabla `Scores`, permisos a nivel de fila y validación en `cloudcode.js` (desplegado desde este repo).
 
 ## ⚠️ Nota
 
