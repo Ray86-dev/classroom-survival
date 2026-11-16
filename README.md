@@ -1,5 +1,7 @@
 # 🏫 CLASSROOM SURVIVAL
 
+> **In English:** A 3D browser game about surviving a class as a teacher in Spain: keep stress, anxiety and mental health in check until the bell rings. Three.js, no install, with a world ranking. [Play it](https://ray86-dev.github.io/classroom-survival/).
+
 > *"Total, si los profes no hacen nada, tienen 3 meses de vacaciones..."* — Cuñao medio español. Hoy vas a comprobarlo.
 
 Minijuego 3D en tono de humor sobre la vida docente en España: eres profesor o profesora en un aula llena de fieras y tienes que **sobrevivir a la clase sin que tu salud mental llegue a cero**.
